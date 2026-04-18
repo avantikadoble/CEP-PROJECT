@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOS Performance Dashboard 2023–2025</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --gold:#FFD700;--gold-dim:#C8A800;--gold-dark:#7A6500;
+  --teal:#00E5C8;--teal-dim:#00B09A;--teal-dark:#005A4D;
+  --rose:#FF4F7B;--rose-dim:#C23358;--rose-dark:#6E1530;
+  --purple:#A855F7;--amber:#F59E0B;--blue:#60A5FA;--green:#34D399;
+  --bg:#0A0B0F;--bg2:#0F1018;--bg3:#151621;--bg4:#1C1E2E;--bg5:#222436;
+  --border:rgba(255,215,0,0.15);--border-teal:rgba(0,229,200,0.2);--border-rose:rgba(255,79,123,0.2);
+  --text:#E8E8F0;--text-dim:#8888A8;--text-faint:#444466;
+  --mono:'Space Mono',monospace;--sans:'Rajdhani',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;min-height:100vh;}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:1000;}
+.nav-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 32px;gap:2px;overflow-x:auto;}
+.nav-tab{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:12px 18px;cursor:pointer;color:var(--text-dim);border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;background:var(--bg2);border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+.header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),var(--gold),var(--rose),transparent);}
+.header-title{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+.header-sub{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:1px;margin-top:4px;}
+.header-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.header-badge{font-family:var(--mono);font-size:10px;color:var(--teal);border:1px solid var(--border-teal);padding:4px 10px;border-radius:2px;text-transform:uppercase;letter-spacing:1px;}
+.filters{display:flex;align-items:center;gap:16px;padding:12px 32px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.filter-group{display:flex;align-items:center;gap:8px;}
+.filter-group label{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+.filter-group select{background:var(--bg3);color:var(--gold);border:1px solid var(--border);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:2px;cursor:pointer;outline:none;min-width:130px;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23FFD700'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;transition:border-color .2s;}
+.filter-group select:hover{border-color:var(--gold);}
+.filter-sep{color:var(--border);font-size:18px;}
+#filterSummary{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--teal);letter-spacing:1px;}
+.page{display:none;}.page.active{display:block;}
+.container{padding:24px 32px;display:grid;gap:20px;}
+.row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.row-2l{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
+.row-1{display:grid;grid-template-columns:1fr;}
+@media(max-width:960px){.row-4,.row-3,.row-2,.row-2l{grid-template-columns:1fr 1fr;}}
+@media(max-width:560px){.row-4,.row-3,.row-2,.row-2l{grid-template-columns:1fr;}}
+.kpi-card{background:var(--bg3);border:1px solid var(--border);padding:16px 20px;border-radius:2px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi-card.gold::before{background:var(--gold);}
+.kpi-card.teal::before{background:var(--teal);}
+.kpi-card.rose::before{background:var(--rose);}
+.kpi-card.purple::before{background:var(--purple);}
+.kpi-card.amber::before{background:var(--amber);}
+.kpi-card.green::before{background:var(--green);}
+.kpi-label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.kpi-value{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1;}
+.kpi-card.gold .kpi-value{color:var(--gold);}
+.kpi-card.teal .kpi-value{color:var(--teal);}
+.kpi-card.rose .kpi-value{color:var(--rose);}
+.kpi-card.purple .kpi-value{color:var(--purple);}
+.kpi-card.amber .kpi-value{color:var(--amber);}
+.kpi-card.green .kpi-value{color:var(--green);}
+.kpi-delta{font-family:var(--mono);font-size:10px;margin-top:6px;}
+.kpi-delta.up{color:var(--teal);}
+.kpi-delta.down{color:var(--rose);}
+.kpi-delta.neutral{color:var(--text-dim);}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--bg4);}
+.card-title{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+.card-badge{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;border:1px solid var(--border);padding:2px 6px;border-radius:1px;}
+.card-body{padding:20px;}
+.section-divider{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:3px;text-transform:uppercase;padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.section-divider::before{content:'//';color:var(--teal);margin-right:4px;}
+.podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:12px;min-height:170px;padding:10px 0;}
+.podium-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;}
+.podium-name{font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;letter-spacing:1px;}
+.podium-score{font-family:var(--mono);font-size:13px;font-weight:700;}
+.podium-wscore{font-family:var(--mono);font-size:9px;color:var(--text-dim);}
+.podium-bar{width:100%;border-radius:2px 2px 0 0;display:flex;align-items:center;justify-content:center;}
+.p1 .podium-score{color:var(--gold);}
+.p2 .podium-score{color:var(--teal);}
+.p3 .podium-score{color:#C0C0C0;}
+.topper-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.topper-card{background:var(--bg4);border:1px solid var(--border);border-radius:2px;padding:14px 16px;position:relative;overflow:hidden;}
+.topper-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.topper-card.gold-accent::after{background:var(--gold);}
+.topper-card.teal-accent::after{background:var(--teal);}
+.topper-school{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.topper-name{font-family:var(--sans);font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.topper-meta{display:flex;gap:8px;align-items:center;margin-top:6px;}
+.topper-score-big{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--gold);}
+.topper-grade{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:1px;background:rgba(255,215,0,0.1);color:var(--gold);border:1px solid var(--border);}
+.std-row{display:grid;grid-template-columns:120px 1fr 1fr 80px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,215,0,0.05);}
+.std-row:last-child{border-bottom:none;}
+.std-label{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;}
+.std-bar-wrap{position:relative;height:18px;background:var(--bg4);border-radius:1px;overflow:hidden;}
+.std-bar{height:100%;border-radius:1px;display:flex;align-items:center;padding-left:6px;}
+.std-bar-label{font-family:var(--mono);font-size:9px;font-weight:700;}
+.std-val{font-family:var(--mono);font-size:12px;text-align:right;}
+.heatmap-cell{border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;cursor:pointer;transition:transform .15s;}
+.heatmap-cell:hover{transform:scale(1.08);z-index:2;}
+.lb-table{width:100%;border-collapse:collapse;}
+.lb-table th{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);padding:8px 12px;text-align:left;}
+.lb-table td{font-family:var(--sans);font-size:14px;padding:9px 12px;border-bottom:1px solid rgba(255,215,0,0.05);}
+.lb-table tr:last-child td{border-bottom:none;}
+.lb-table tr:hover td{background:rgba(255,215,0,0.04);}
+.rank-badge{font-family:var(--mono);font-size:11px;font-weight:700;width:22px;height:22px;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;}
+.rank-1{background:rgba(255,215,0,0.15);color:var(--gold);}
+.rank-2{background:rgba(0,229,200,0.12);color:var(--teal);}
+.rank-3{background:rgba(192,192,192,0.12);color:#C0C0C0;}
+.rank-n{background:rgba(136,136,168,0.1);color:var(--text-dim);}
+.score-bar-wrap{display:flex;align-items:center;gap:8px;}
+.score-bar-bg{flex:1;height:6px;background:var(--bg4);border-radius:1px;}
+.score-bar-fill{height:6px;border-radius:1px;}
+.gender-tag{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:1px;}
+.m-tag{background:rgba(96,165,250,0.15);color:#60A5FA;}
+.f-tag{background:rgba(255,79,123,0.12);color:var(--rose);}
+.o-tag{background:rgba(168,85,247,0.12);color:var(--purple);}
+.std-tag{font-family:var(--mono);font-size:9px;padding:2px 5px;border-radius:1px;}
+.pri-tag{background:rgba(52,211,153,0.12);color:var(--green);}
+.mid-tag{background:rgba(245,158,11,0.12);color:var(--amber);}
+.sec-tag{background:rgba(168,85,247,0.12);color:var(--purple);}
+.trend-locked{font-family:var(--mono);font-size:9px;background:rgba(0,229,200,0.1);color:var(--teal);border:1px solid var(--border-teal);padding:3px 8px;border-radius:1px;letter-spacing:1px;}
+.chart-wrap{position:relative;width:100%;}
+.overflow-scroll{overflow-x:auto;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--gold-dark);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="header-title">SOS Performance Dashboard</div>
+    <div class="header-sub" id="dashboardSubtext">School of Scholars · Academic Years 2023 – 2025</div>
+  </div>
+  <div class="header-right">
+    <div class="header-badge" id="liveFilterBadge">ALL FILTERS ACTIVE</div>
+    <div class="header-badge" style="color:var(--rose);border-color:var(--border-rose);" id="recordBadge">— RECORDS</div>
+  </div>
+</div>
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="switchTab('overview')">Overview</div>
+  <div class="nav-tab" onclick="switchTab('rankings')">School Rankings</div>
+  <div class="nav-tab" onclick="switchTab('toppers')">Individual Toppers</div>
+  <div class="nav-tab" onclick="switchTab('demographics')">Demographics</div>
+  <div class="nav-tab" onclick="switchTab('leaderboard')">Leaderboard</div>
+</div>
+<div class="filters">
+  <div class="filter-group">
+    <label>Year</label>
+    <select id="yearFilter" onchange="applyFilters()">
+      <option value="ALL">All Years</option>
+      <option value="2023">2023</option>
+      <option value="2024">2024</option>
+      <option value="2025">2025</option>
+    </select>
+  </div>
+  <span class="filter-sep">|</span>
+  <div class="filter-group">
+    <label>School</label>
+    <select id="schoolFilter" onchange="applyFilters()">
+      <option value="ALL">All Schools</option>
+    </select>
+  </div>
+  <span class="filter-sep">|</span>
+  <div class="filter-group">
+    <label>Gender</label>
+    <select id="genderFilter" onchange="applyFilters()">
+      <option value="ALL">All Genders</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="unknown">Unknown</option>
+    </select>
+  </div>
+  <span class="filter-sep">|</span>
+  <div class="filter-group">
+    <label>Standard</label>
+    <select id="standardFilter" onchange="applyFilters()">
+      <option value="ALL">All Standards</option>
+      <option value="Primary">Primary (3–5)</option>
+      <option value="Middle">Middle (6–8)</option>
+      <option value="Secondary">Secondary (9–12)</option>
+    </select>
+  </div>
+  <span id="filterSummary"></span>
+</div>
+
+<!-- OVERVIEW PAGE -->
+<div id="page-overview" class="page active">
+<div class="container">
+  <div class="row-4">
+    <div class="kpi-card gold"><div class="kpi-label">Avg Score</div><div class="kpi-value" id="kpi-avg">—</div><div class="kpi-delta" id="kpi-avg-d"></div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Top Score</div><div class="kpi-value" id="kpi-top">—</div><div class="kpi-delta" id="kpi-top-d"></div></div>
+    <div class="kpi-card rose"><div class="kpi-label">Students</div><div class="kpi-value" id="kpi-count">—</div><div class="kpi-delta" id="kpi-count-d"></div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Schools</div><div class="kpi-value" id="kpi-schools">—</div><div class="kpi-delta neutral" id="kpi-schools-d"></div></div>
+  </div>
+  <div class="row-4">
+    <div class="kpi-card amber"><div class="kpi-label">Pass Rate</div><div class="kpi-value" id="kpi-pass">—</div><div class="kpi-delta" id="kpi-pass-d"></div></div>
+    <div class="kpi-card green"><div class="kpi-label">Top Achievers</div><div class="kpi-value" id="kpi-top-ach">—</div><div class="kpi-delta neutral">First in School</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Global Top Rank</div><div class="kpi-value" id="kpi-grank">—</div><div class="kpi-delta neutral" id="kpi-grank-d"></div></div>
+    <div class="kpi-card gold"><div class="kpi-label">Median Score</div><div class="kpi-value" id="kpi-median">—</div><div class="kpi-delta" id="kpi-median-d"></div></div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Top 3 School Podium</span><span class="card-badge">AVG SCORE RANKING</span></div>
+      <div class="card-body"><div class="podium-wrap" id="podiumWrap"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Multi-Metric Bar Chart</span><span class="card-badge">TOP SCHOOLS</span></div>
+      <div class="card-body">
+        <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap" id="barLegend"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Score Distribution</span><span class="card-badge">HISTOGRAM</span></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:240px"><canvas id="histChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Year Trend (3-Year View)</span><span class="trend-locked">ALWAYS FULL RANGE</span></div>
+      <div class="card-body">
+        <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap" id="trendLegend"></div>
+        <div class="chart-wrap" style="height:240px"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- RANKINGS PAGE -->
+<div id="page-rankings" class="page">
+<div class="container">
+  <div class="row-1">
+    <div class="card">
+      <div class="card-header"><span class="card-title">School Rankings</span><span class="card-badge">AVG SCORE · PASS RATE · TOP ACHIEVERS</span></div>
+      <div class="card-body">
+        <div id="rankingsTable"></div>
+      </div>
+    </div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Top Schools — Score Comparison</span><span class="card-badge">AVG vs MEDIAN vs TOP</span></div>
+      <div class="card-body">
+        <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap" id="top3BarLegend"></div>
+        <div class="chart-wrap" style="height:260px"><canvas id="top3BarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">School Score Distribution</span><span class="card-badge">RADAR</span></div>
+      <div class="card-body">
+        <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap" id="radarLegend"></div>
+        <div class="chart-wrap" style="height:260px"><canvas id="radarChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- TOPPERS PAGE -->
+<div id="page-toppers" class="page">
+<div class="container">
+  <div class="row-1">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Top Scorer per School</span><span class="card-badge" id="topper-badge">ALL SCHOOLS</span></div>
+      <div class="card-body"><div class="topper-grid" id="topperGrid"></div></div>
+    </div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Per-School High Scorer</span><span class="card-badge">TOP MARKS</span></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:300px"><canvas id="topperBarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Topper Gender & Standard Split</span><span class="card-badge">DISTRIBUTION</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center;">
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:10px;">GENDER SPLIT</div>
+            <div class="chart-wrap" style="height:160px"><canvas id="topperPieChart"></canvas></div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:10px;">STANDARD SPLIT</div>
+            <div class="chart-wrap" style="height:160px"><canvas id="topperStdChart"></canvas></div>
+          </div>
+        </div>
+        <div id="topperPieLegend" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- DEMOGRAPHICS PAGE -->
+<div id="page-demographics" class="page">
+<div class="container">
+  <div class="row-3">
+    <div class="kpi-card teal"><div class="kpi-label">Primary Avg Score</div><div class="kpi-value" id="d-kpi-pri">—</div><div class="kpi-delta neutral">Stds 3–5</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Middle Avg Score</div><div class="kpi-value" id="d-kpi-mid">—</div><div class="kpi-delta neutral">Stds 6–8</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Secondary Avg Score</div><div class="kpi-value" id="d-kpi-sec">—</div><div class="kpi-delta neutral">Stds 9–12</div></div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Standard-Based Analysis</span><span class="card-badge">SCORE vs PASS RATE</span></div>
+      <div class="card-body">
+        <div class="section-divider">Primary · Middle · Secondary</div>
+        <div id="standardAnalysis"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Student Distribution</span><span class="card-badge">BY STANDARD GROUP</span></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:240px"><canvas id="ageDistChart"></canvas></div>
+        <div id="ageDistLegend" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Gender Performance by School</span><span class="card-badge">AVG SCORE BY GENDER</span></div>
+      <div class="card-body">
+        <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap" id="genderBarLegend"></div>
+        <div class="chart-wrap" style="height:220px"><canvas id="genderBarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Gender Enrollment Split</span><span class="card-badge">OVERALL</span></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:200px"><canvas id="genderPieChart"></canvas></div>
+        <div id="genderPieLegend" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;justify-content:center;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="row-1">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Score Heatmap</span><span class="card-badge">SCHOOL × STANDARD</span></div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Avg score per school per standard group. Darker = higher score. Hover for details.</div>
+        <div id="heatmapWrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LEADERBOARD PAGE -->
+<div id="page-leaderboard" class="page">
+<div class="container">
+  <div class="row-1">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Full Leaderboard</span><span class="card-badge" id="lb-badge">TOP 50 BY SCORE</span></div>
+      <div class="card-body overflow-scroll">
+        <table class="lb-table" id="lbTable">
+          <thead><tr>
+            <th>#</th><th>Name</th><th>School</th><th>Std</th><th>Year</th><th>Gender</th>
+            <th>Score</th><th>Global Rank</th><th>School Rank</th><th>Pass/Fail</th><th>Achievement</th><th>Performance</th>
+          </tr></thead>
+          <tbody id="lbBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ===================== DATA =====================
+const _RAW_PAYLOAD = {"s":["Mahatma Gandhi Wanadongri","SOS Amravati","SOS Atrey Layout","SOS Beltarodi","SOS Birla Colony","SOS Dhamangaon","SOS Hinganghat","SOS Hudkeshwar","SOS KK","SOS Kaulkhed","SOS Wanadongri","SOS Wardha","SOS Warud","SOS Yavatmal"],"d":[["Advika Deore",1,0,1,0,3,43,5972,131,1,""],["Anaya Khan",1,0,1,0,3,34,7045,194,0,""],["Anvi Panchbhai",1,0,1,0,3,22,8831,313,0,""],["Ashlesha Deotare",1,0,1,0,3,17,9198,336,0,""],["Divya Mukhare",1,0,1,0,3,6,9621,381,0,""],["Divyanka Amale",1,0,1,0,3,28,8099,262,0,""],["Ishwari Mudgale",1,0,1,0,3,17,9198,336,0,""],["Ovi Hirulkar",1,0,1,0,3,30,7667,227,0,""],["Rajsi Patil",1,0,1,0,3,6,9621,381,0,""],["Riddhi Dhande",1,0,1,0,3,42,6046,136,1,""],["Samruddhi Raut",1,0,1,0,3,30,7667,227,0,""],["Sanskruti Jaiswal",1,0,1,0,3,26,8548,289,0,""],["Shrinidhi Pinjarkar",1,0,1,0,3,42,6046,136,1,""],["Shubada Nikam",1,0,1,0,3,28,8099,262,0,""],["Swara Deshmukh",1,0,1,0,3,36,6811,176,0,""],["Swara Thakare",1,0,1,0,3,30,7667,227,0,""],["Advait Bhopale",1,0,0,0,3,29,7972,248,0,""],["Agastya Durne",1,0,0,0,3,30,7667,227,0,""],["Ansh Rithe",1,0,0,0,3,0,9741,394,0,""],["Arnav Raut",1,0,0,0,3,18,9107,327,0,""],["Atharve Tayade",1,0,0,0,3,29,7972,248,0,""],["Bhargav Patki",1,0,0,0,3,30,7667,227,0,""],["Hruday Jambhole",1,0,0,0,3,39,6301,155,0,""],["Krushnad Rahate",1,0,0,0,3,29,7972,248,0,""],["Kushal Rathod",1,0,0,0,3,39,6301,155,0,""],["Mohd Saaqib Sajid",1,0,0,0,3,16,9344,354,0,""],["Ritwik Bijwe",1,0,0,0,3,30,7667,227,0,""],["Samarth Raut",1,0,0,0,3,30,7667,227,0,""],["Shashwat Sable",1,0,0,0,3,44,5709,117,1,""],["Sparsh Lende",1,0,0,0,3,38,6610,168,0,""],["Utkersh Wakode",1,0,0,0,3,17,9198,336,0,""],["Vivek Jawale",1,0,0,0,3,28,8099,262,0,""],["Aaryan Lonare",1,0,0,0,3,71,2601,19,1,""],["Aaradhya Hirade",1,0,1,0,3,33,7298,209,0,""],["Aashvi Jayade",1,0,1,0,3,58,3910,41,1,""],["Angel Rangari",1,0,1,0,3,6,9621,381,0,""],["Chinmai Bhuyar",1,0,1,0,3,56,3980,44,1,""],["Himanshi Jivtani",1,0,1,0,3,30,7667,227,0,""],["Kishori Kale",1,0,1,0,3,36,6811,176,0,""],["Kritika Solanke",1,0,1,0,3,30,7667,227,0,""],["Narayani Deshpande",1,0,1,0,3,27,8436,283,0,""],["Neeraja Deshpande",1,0,1,0,3,83,1510,10,1,""],["Purvi Joshi",1,0,1,0,3,0,9741,394,0,""],["Sharayu Chamlate",1,0,1,0,3,23,8665,299,0,""],["Tanushree Rathod",1,0,1,0,3,40,6166,146,1,""],["Tanvi Meshram",1,0,1,0,3,30,7667,227,0,""],["Aayush Holey",1,0,0,0,3,22,8831,313,0,""],["Abhi Umekar",1,0,0,0,3,27,8436,283,0,""],["Abhinav Gaigole",1,0,0,0,3,45,5408,104,1,""],["Aditya Ahirwar",1,0,0,0,3,52,4620,62,1,""],["Advait Rao",1,0,0,0,3,6,9621,381,0,""],["Alop Patharkar",1,0,0,0,3,49,5038,81,1,""],["Avneesh Ukey",1,0,0,0,3,45,5408,104,1,""],["Devansh Waoo",1,0,0,0,3,61,3448,33,1,""],["Devanshu Bhure",1,0,0,0,3,30,7667,227,0,""],["Harshak Godbole",1,0,0,0,3,56,3980,44,1,""],["Nakshatra Varma",1,0,0,0,3,30,7667,227,0,""],["Naman Rathod",1,0,0,0,3,31,7644,225,0,""],["Nimit Bhati",1,0,0,0,3,6,9621,381,0,""],["Shashwat Sonewane",1,0,0,0,3,30,7667,227,0,""],["Shravan Jaiswal",1,0,0,0,3,88,1211,4,1,""],["Siddharth Bhagat",1,0,0,0,3,6,9621,381,0,""],["Sparsh Deshmukh",1,0,0,0,3,86,1456,9,1,""],["Veer Hatnapure",1,0,0,0,3,25,8591,295,0,""],["Vinit Joshi",1,0,0,0,3,22,8831,313,0,""],["Anaya Mangulkar",1,0,1,0,3,49,5038,81,1,""],["Antara Khobragade",1,0,1,0,3,22,8831,313,0,""],["Arnavi Prajapati",1,0,1,0,3,42,6046,136,1,""],["Dhnyanada Chaudhari",1,0,1,0,3,26,8548,289,0,""],["Kavya Kadu",1,0,1,0,3,55,4232,50,1,""],["Pranjal Saygunde",1,0,1,0,3,54,4506,56,1,""],["Prayukta Patil",1,0,1,0,3,17,9198,336,0,""],["Prisha Agiwal",1,0,1,0,3,17,9198,336,0,""],["Riddhima Shinde",1,0,1,0,3,34,7045,194,0,""],["Sanvi Awalinkar",1,0,1,0,3,32,7571,219,0,""],["Shalin Naik",1,0,1,0,3,26,8548,289,0,""],["Swaradhya Pawar",1,0,1,0,3,22,8831,313,0,""],["Ameya Kulkarni",1,0,0,0,3,23,8665,299,0,""],["Arnav Hajare",1,0,0,0,3,26,8548,289,0,""],["Ayush Pakhan",1,0,0,0,3,49,5038,81,1,""],["Jaydip Navalkar",1,0,0,0,3,46,5333,100,1,""],["Naipunya Mahure",1,0,0,0,3,41,6136,143,1,""],["Navinya Ingale",1,0,0,0,3,6,9621,381,0,""],["Prasanna Thakare",1,0,0,0,3,22,8831,313,0,""],["Ram Chavhan",1,0,0,0,3,12,9440,363,0,""],["Rudra Kohale",1,0,0,0,3,12,9440,363,0,""],["Sadim Khan",1,0,0,0,3,29,7972,248,0,""],["Tanishk Dhone",1,0,0,0,3,18,9107,327,0,""],["Utkarsh Ingole",1,0,0,0,3,28,8099,262,0,""],["Vinit Deshmukh",1,0,0,0,3,11,9552,374,0,""],["Viraj Nanote",1,0,0,0,3,11,9552,374,0,""],["Aaradhya Kapile",1,0,1,0,3,43,5972,131,1,""],["Aarohi Ramteke",1,0,1,0,3,38,6610,168,0,""],["Abhiniti Takpire",1,0,1,0,3,50,4783,70,1,""],["Anika Kesharwani",1,0,1,0,3,32,7571,219,0,""],["Anshuja Sarkate",1,0,1,0,3,22,8831,313,0,""],["Anushri Turkane",1,0,1,0,3,26,8548,289,0,""],["Harshita Pandey",1,0,1,0,3,62,3329,30,1,""],["Krisha Nahar",1,0,1,0,3,57,3929,43,1,""],["Namrata Awaghad",1,0,1,0,3,17,9198,336,0,""],["Nirbhaya Ubhad",1,0,1,0,3,24,8608,298,0,""],["Priyal Kannake",1,0,1,0,3,12,9440,363,0,""],["Rajvi Patil",1,0,1,0,3,12,9440,363,0,""],["Sanvi Bijwe",1,0,1,0,3,26,8548,289,0,""],["Siddhi Kharapkar",1,0,1,0,3,44,5709,117,1,""],["Swanandi Kathe",1,0,1,0,3,38,6610,168,0,""],["Aarav Shivankar",1,0,0,0,3,65,3222,26,1,""],["Ajinkya Pawar",1,0,0,0,3,23,8665,299,0,""],["Avaneesh Londe",1,0,0,0,3,29,7972,248,0,""],["Chintan Deshmukh",1,0,0,0,3,40,6166,146,1,""],["Harshnil Dhage",1,0,0,0,3,11,9552,374,0,""],["Kushal Charpe",1,0,0,0,3,17,9198,336,0,""],["Madhur Gharde",1,0,0,0,3,35,6967,187,0,""],["Mohd. Aqdas Khan",1,0,0,0,3,23,8665,299,0,""],["Naksh Dhalwani",1,0,0,0,3,23,8665,299,0,""],["Rachit Shrirao",1,0,0,0,3,17,9198,336,0,""],["Raghav Patel",1,0,0,0,3,60,3709,37,1,""],["Raghav Parwani",1,0,0,0,3,16,9344,354,0,""],["Rishit Patil",1,0,0,0,3,12,9440,363,0,""],["Swarnim Band",1,0,0,0,3,37,6772,175,0,""],["Tanay Dhawale",1,0,0,0,3,11,9552,374,0,""],["Utkarsh Patil",1,0,0,0,3,18,9107,327,0,""],["Vivan Chatur",1,0,0,0,3,22,8831,313,0,""],["Yug Rochlani",1,0,0,0,3,28,8099,262,0,""],["Akshara Manwar",1,0,1,0,3,46,5333,100,1,""],["Ishwari Pawar",1,0,1,0,3,52,4620,62,1,""],["Krushnali Rohankar",1,0,1,0,3,30,7667,227,0,""],["Niharika Mahajan",1,0,1,0,3,49,5038,81,1,""],["Nilashri Nistane",1,0,1,0,3,44,5709,117,1,""],["Pranavi Jagtap",1,0,1,0,3,36,6811,176,0,""],["Saumayee Ingle",1,0,1,0,3,47,5297,97,1,""],["Shreeja Sahu",1,0,1,0,3,28,8099,262,0,""],["Shrisha Metkar",1,0,1,0,3,42,6046,136,1,""],["Swanandi Lakde",1,0,1,0,3,25,8591,295,0,""],["Aaradhya Dhote",1,0,1,0,3,40,6166,146,1,""],["Aarav Pundage",1,0,1,0,3,22,8831,313,0,""],["Advik Manke",1,0,0,0,3,36,6811,176,0,""],["Anay Lohakare",1,0,0,0,3,11,9552,374,0,""],["Animesh Awaghad",1,0,0,0,3,22,8831,313,0,""],["Ansh Munde",1,0,0,0,3,16,9344,354,0,""],["Anshuman Shinde",1,0,0,0,3,16,957,8,0,""],["Atharv Jamnekar",1,0,0,0,3,49,5038,81,1,""],["Hardik Verma",1,0,0,0,3,22,8831,313,0,""],["Ojas Chikhale",1,0,0,0,3,0,9741,394,0,""],["Raman Chaube",1,0,0,0,3,42,6046,136,1,""],["Revansh Thakare",1,0,0,0,3,21,9068,326,0,""],["Shobhit Bhagat",1,0,0,0,3,54,4506,56,1,""],["Shree Pinjarkar",1,0,0,0,3,35,6967,187,0,""],["Swaraj Umbarkar",1,0,0,0,3,68,2771,20,1,""],["Vedant Kshirsagar",1,0,0,0,3,6,252,9,0,""],["Vihang Kanade",1,0,0,0,3,54,4506,56,1,""],["Yadnya Shahane",1,0,0,0,3,64,3299,28,1,""],["Yash Giratkar",1,0,0,0,3,75,27,1,1,"First in School"],["Ananya Rajput",1,0,1,0,3,39,6301,155,0,""],["Ananya Bhonge",1,0,1,0,3,12,9440,363,0,""],["Ananya Chaudhari",1,0,1,0,3,23,8665,299,0,""],["Ishika Akhre",1,0,1,0,3,36,6811,176,0,""],["Ishwari Panzade",1,0,1,0,3,39,6301,155,0,""],["Kritika Dhankani",1,0,1,0,3,39,6301,155,0,""],["Manasvi Kadu",1,0,1,0,3,0,9741,394,0,""],["Ojasvi Bansod",1,0,1,0,3,0,9741,394,0,""],["Ovi Kathe",1,0,1,0,3,88,1211,4,1,""],["Sanjana Gujare",1,0,1,0,3,35,6967,187,0,""],["Sarakshi Alone",1,0,1,0,3,28,8099,262,0,""],["Savi Burkhande",1,0,1,0,3,72,2314,14,1,""],["Swarangi Nakashe",1,0,1,0,3,14,9416,361,0,""],["Yukti Parise",1,0,1,0,3,34,7045,194,0,""],["Anish Jakate",1,0,0,0,3,56,3980,44,1,""],["Ayansh Naranje",1,0,0,0,3,38,6610,168,0,""],["Ayush Navhale",1,0,0,0,3,28,8099,262,0,""],["Diyan Chavhan",1,0,0,0,3,30,7667,227,0,""],["Krishna Hemrajani",1,0,0,0,3,14,9416,361,0,""],["Mithilesh Bhonde",1,0,0,0,3,36,6811,176,0,""],["Raghav Malani",1,0,0,0,3,27,8436,283,0,""],["Reyaansh Raut",1,0,0,0,3,6,9621,381,0,""],["Sanjyot Bawane",1,0,0,0,3,0,9741,394,0,""],["Satvik Tardeja",1,0,0,0,3,44,5709,117,1,""],["Satwik Ugle",1,0,0,0,3,30,147,5,0,""],["Shardul Bhamburkar",1,0,0,0,3,38,6610,168,0,""],["Shravan Aher",1,0,0,0,3,11,9552,374,0,""],["Swarup Walke",1,0,0,0,3,48,5236,92,1,""],["Aarohi Vishwakarma",1,0,1,0,3,34,7045,194,0,""],["Aditi Khade",1,0,1,0,3,30,792,3,0,"Second Runner-Up in School"],["Aditi Raut",1,0,1,0,3,29,7972,248,0,""],["Ananya Rathod",1,0,1,0,3,42,6046,136,1,""],["Anushka Chavhan",1,0,1,0,3,61,3448,33,1,""],["Anushri Lohakare",1,0,1,0,3,34,7045,194,0,""],["Aradhya Kale",1,0,1,0,3,40,6166,146,1,""],["Asmi Thakare",1,0,1,0,3,55,4232,50,1,""],["Avani Bute",1,0,1,0,3,27,213,7,0,""],["Eshita Maske",1,0,1,0,3,40,6166,146,1,""],["Mehera Saudagar",1,0,1,0,3,47,5297,97,1,""],["Mrunmai Pinjarkar",1,0,1,0,3,45,5408,104,1,""],["Niyati Athor",1,0,1,0,3,29,7972,248,0,""],["Pranjal Wakhare",1,0,1,0,3,11,9552,374,0,""],["Roshani Namewar",1,0,1,0,3,28,8099,262,0,""],["Sachi Baberwal",1,0,1,0,3,35,6967,187,0,""],["Swamini Kale",1,0,1,0,3,17,9198,336,0,""],["Yashita Gode",1,0,1,0,3,62,3329,30,1,""],["Aayush Hatwar",1,0,0,0,3,35,6967,187,0,""],["Adavait Gade",1,0,0,0,3,23,8665,299,0,""],["Adhish Lomate",1,0,0,0,3,56,56,2,1,"First Runner-Up in School"],["Akshaydeep Gajbhiye",1,0,0,0,3,51,4659,64,1,""],["Arnav Patil",1,0,0,0,3,67,2804,21,1,""],["Arnav Wankhade",1,0,0,0,3,29,7972,248,0,""],["Krushna Tembhare",1,0,0,0,3,33,7298,209,0,""],["Medhansh Fadanvis",1,0,0,0,3,22,915,7,0,""],["Neel Vinchurkar",1,0,0,0,3,51,4659,64,1,""],["Prince Dhandar",1,0,0,0,3,6,9621,381,0,""],["Samraat Vaidya",1,0,0,0,3,44,5709,117,1,""],["Sarthak Bhadange",1,0,0,0,3,48,620,1,1,"First in School"],["Shaurya Tidke",1,0,0,0,3,12,246,8,0,""],["Shridhan Pohankar",1,0,0,0,3,44,5709,117,1,""],["Shriman Lende",1,0,0,0,3,45,91,4,1,""],["Swaraj Lande",1,0,0,0,3,51,4659,64,1,""],["Tanishq Deshmukh",1,0,0,0,3,36,6811,176,0,""],["Virant Patond",1,0,0,0,3,30,7667,227,0,""],["Aarohi Ridge",1,0,1,0,4,35,6967,187,0,""],["Adwika Ade",1,0,1,0,4,49,5038,81,1,""],["Anushka Yadav",1,0,1,0,4,34,7045,194,0,""],["Aaradhya Kathole",1,0,1,0,4,28,8099,262,0,""],["Diya Rathi",1,0,1,0,4,39,6301,155,0,""],["Grishma Chavan",1,0,1,0,4,28,8099,262,0,""],["Kanika Punkar",1,0,1,0,4,33,7298,209,0,""],["Khushi Agrawal",1,0,1,0,4,51,4659,64,1,""],["Manjiri Warkad",1,0,1,0,4,17,9198,336,0,""],["Nirmayi Bopshetti",1,0,1,0,4,33,7298,209,0,""],["Swaradhya Kharad",1,0,1,0,4,55,4232,50,1,""],["Gauri Chede",1,0,1,0,4,72,2314,14,1,""],["Vidisha Kadu",1,0,1,0,4,23,8665,299,0,""],["Anvi Bijwe",1,0,1,0,4,33,7298,209,0,""],["Aaradhya Raut",1,0,0,0,4,54,4506,56,1,""],["Arayu Vishwakarma",1,0,0,0,4,72,2314,14,1,""],["Advay Pande",1,0,0,0,4,77,1971,12,1,""],["Anshuman Thakur",1,0,0,0,4,54,4506,56,1,""],["Bhavya Dhamecha",1,0,0,0,4,29,7972,248,0,""],["Devang Gundaiyya",1,0,0,0,4,50,4783,70,1,""],["Devansh Pandhare",1,0,0,0,4,34,7045,194,0,""],["Kartik Akarte",1,0,0,0,4,44,5709,117,1,""],["Kaustubh Gaikwad",1,0,0,0,4,17,9198,336,0,""],["Malhar Kadam",1,0,0,0,4,28,8099,262,0,""],["Naksh Rajgure",1,0,0,0,4,36,6811,176,0,""],["Om Kalane",1,0,0,0,4,49,5038,81,1,""],["Reyaansh Sune",1,0,0,0,4,45,5408,104,1,""],["Sarthak Fance",1,0,0,0,4,50,4783,70,1,""],["Tanay Mehetre",1,0,0,0,4,22,8831,313,0,""],["Tavish Wasnik",1,0,0,0,4,49,5038,81,1,""],["Vivan Joshi",1,0,0,0,4,44,5709,117,1,""],["Anandi Dudhe",1,0,1,0,4,51,4659,64,1,""],["Hindavi Ghadge",1,0,1,0,4,40,6166,146,1,""],["Ishta Kapase",1,0,1,0,4,50,4783,70,1,""],["Ishwari Kshirsagar",1,0,1,0,4,88,1211,4,1,""],["Kadambari Kadu",1,0,1,0,4,48,5236,92,1,""],["Ramai Vyawahare",1,0,1,0,4,32,7571,219,0,""],["Rudrani Kshirsagar",1,0,1,0,4,67,2804,21,1,""],["Shubhra Shegokar",1,0,1,0,4,34,7045,194,0,""],["Spruha Mankar",1,0,1,0,4,50,4783,70,1,""],["Aaradhya Taley",1,0,2,0,4,42,6046,136,1,""],["Aaryan Wakpanjar",1,0,0,0,4,45,5408,104,1,""],["Anagh Thakare",1,0,0,0,4,56,3980,44,1,""],["Aradhya Thakare",1,0,0,0,4,28,8099,262,0,""],["Arnav Tolmare",1,0,0,0,4,49,81,3,1,"Second Runner-Up in School"],["Chaitanya Raut",1,0,0,0,4,33,7298,209,0,""],["Kartik Panjabi",1,0,0,0,4,50,4783,70,1,""],["Naman Lad",1,0,0,0,4,28,8099,262,0,""],["Nandish Pawar",1,0,0,0,4,23,8665,299,0,""],["Prasham Kothari",1,0,0,0,4,6,9621,381,0,""],["Sarvesh Tiwari",1,0,0,0,4,56,3980,44,1,""],["Suryansh Kalaskar",1,0,0,0,4,62,3329,30,1,""],["Unais Khan",1,0,0,0,4,45,5408,104,1,""],["Advika Khanzode",1,0,1,0,4,47,5297,97,1,""],["Ananya Nagwani",1,0,1,0,4,51,4659,64,1,""],["Arya Pund",1,0,1,0,4,50,4783,70,1,""],["Darshana Bawane",1,0,1,0,4,40,6166,146,1,""],["Dhruvi Kalaskar",1,0,1,0,4,34,7045,194,0,""],["Kanak Rathi",1,0,1,0,4,18,9107,327,0,""],["Kimaya Sarkate",1,0,1,0,4,43,5972,131,1,""],["Narayani Turanker",1,0,1,0,4,44,5709,117,1,""],["Ojasvi Pandit",1,0,1,0,4,94,874,3,1,"Second Runner-Up in School"],["Peehu Munde",1,0,1,0,4,55,4232,50,1,""],["Piyusha Bode",1,0,1,0,4,17,9198,336,0,""],["Prapti Upadhyay",1,0,1,0,4,30,7667,227,0,""],["Reva Wankhade",1,0,1,0,4,49,5038,81,1,""],["Riddhi Bangar",1,0,1,0,4,30,792,3,0,"Second Runner-Up in School"],["Riya Pisole",1,0,1,0,4,12,9440,363,0,""],["Shreya Ladole",1,0,1,0,4,39,6301,155,0,""],["Soumya Deshmukh",1,0,1,0,4,12,9440,363,0,""],["Swaranjali Gulhane",1,0,1,0,4,33,7298,209,0,""],["Trupti Rajani",1,0,1,0,4,17,9198,336,0,""],["Tulsi Ghodki",1,0,1,0,4,18,9107,327,0,""],["Yashasvi Kshirsagar",1,0,1,0,4,54,4506,56,1,""],["Aaradhya Nichat",1,0,0,0,4,50,4783,70,1,""],["Abhang Dande",1,0,0,0,4,28,8099,262,0,""],["Amitesh Awaghad",1,0,1,0,4,15,9410,360,0,""],["Anay Pisole",1,0,0,0,4,59,3889,40,1,""],["Anshul Wankhede",1,0,0,0,4,29,7972,248,0,""],["Aryan Wankhade",1,0,0,0,4,45,5408,104,1,""],["Dewansh  . Ikhar",1,0,0,0,4,27,8436,283,0,""],["Himanshu Ghawghawe",1,0,0,0,4,28,8099,262,0,""],["Mohd.Mufaiz . Azhar",1,0,0,0,4,38,6610,168,0,""],["Parth Brahman",1,0,0,0,4,39,6301,155,0,""],["Prasanna Tapare",1,0,0,0,4,83,1510,10,1,""],["Prathamesh Sonune",1,0,0,0,4,16,9344,354,0,""],["Pushkar Rai",1,0,0,0,4,48,5236,92,1,""],["Sai Gorele",1,0,0,0,4,58,3910,41,1,""],["Shivansh Agrawal",1,0,0,0,4,60,3709,37,1,""],["Swaraj Deshmukh",1,0,0,0,4,46,5333,100,1,""],["Varad Meshram",1,0,0,0,4,43,5972,131,1,""],["Aadya Padole",1,0,1,0,4,77,1971,12,1,""],["Dhanashri Gadge",1,0,1,0,4,28,8099,262,0,""],["Drishti Rohada",1,0,1,0,4,45,5408,104,1,""],["Gautami Kaloti",1,0,1,0,4,34,7045,194,0,""],["Gunjan Dhone",1,0,1,0,4,50,4783,70,1,""],["Hrudaya Mudgal",1,0,1,0,4,72,2314,14,1,""],["Kanak Rathi",1,0,1,0,4,34,7045,194,0,""],["Niharika Kadu",1,0,1,0,4,12,9440,363,0,""],["Shubhra Bijwe",1,0,1,0,4,55,4232,50,1,""],["Siddhi Dandge",1,0,1,0,4,45,5408,104,1,""],["Swara Lende",1,0,1,0,4,29,7972,248,0,""],["Spruha Gawai",1,0,1,0,4,39,6301,155,0,""],["Utsavi Padole",1,0,1,0,4,88,1211,4,1,""],["Vaidehi Zalke",1,0,1,0,4,105,508,2,1,"First Runner-Up in School"],["Vishakha Wankhade",1,0,1,0,4,39,6301,155,0,""],["Aditya Nirmal",1,0,0,0,4,28,8099,262,0,""],["Arjun Wankhade",1,0,0,0,4,35,6967,187,0,""],["Atharv Badgujar",1,0,0,0,4,16,9344,354,0,""],["Bhraman Shinde",1,0,0,0,4,12,9440,363,0,""],["Devansh Patel",1,0,0,0,4,66,2987,23,1,""],["Devesh Gangwani",1,0,0,0,4,39,6301,155,0,""],["Manan Kenekar",1,0,0,0,4,40,6166,146,1,""],["Nishant Kashyap",1,0,0,0,4,27,8436,283,0,""],["Om Ambadkar",1,0,0,0,4,25,8591,295,0,""],["Prabal Pande",1,0,0,0,4,28,8099,262,0,""],["Purav Gole",1,0,0,0,4,34,7045,194,0,""],["Sarvesh Kadam",1,0,0,0,4,88,1211,4,1,""],["Shaurya Sharma",1,0,0,0,4,22,8831,313,0,""],["Shree Ghode",1,0,0,0,4,50,4783,70,1,""],["Shreyansh Indurkar",1,0,0,0,4,23,8665,299,0,""],["Shreyash Nankar",1,0,0,0,4,45,5408,104,1,""],["Swarup Kharode",1,0,0,0,4,34,7045,194,0,""],["Vibhyanu Gulhane",1,0,0,0,4,44,5709,117,1,""],["Vinay Rathod",1,0,0,0,4,66,2987,23,1,""],["Yuvraj Jaswani",1,0,0,0,4,45,5408,104,1,""],["Jay Gawande",1,0,0,0,4,23,8665,299,0,""],["Aaradhya Upase",1,0,1,0,4,60,3709,37,1,""],["Aaradhya Bhurgate",1,0,1,0,4,30,7667,227,0,""],["Akshada Joshi",1,0,1,0,4,17,9198,336,0,""],["Chaitanya Rokade",1,0,1,0,4,18,9107,327,0,""],["Gitika Varma",1,0,1,0,4,46,5333,100,1,""],["Madhura Kankane",1,0,1,0,4,45,5408,104,1,""],["Purva Malokar",1,0,1,0,4,29,7972,248,0,""],["Ravi Munde",1,0,1,0,4,61,3448,33,1,""],["Sanvi Anasane",1,0,1,0,4,127,170,1,1,"First in School"],["Sara Sheje",1,0,1,0,4,12,9440,363,0,""],["Shrinidhi Manke",1,0,1,0,4,48,5236,92,1,""],["Spruha Nage",1,0,1,0,4,16,9344,354,0,""],["Sukhada Karale",1,0,1,0,4,41,6136,143,1,""],["Swara Sawalakhe",1,0,1,0,4,31,7644,225,0,""],["Tanvir Grewal",1,0,1,0,4,18,9107,327,0,""],["Veera Kapse",1,0,1,0,4,65,3222,26,1,""],["Vidhi Raut",1,0,1,0,4,66,2987,23,1,""],["Aditya Bajaj",1,0,0,0,4,50,4783,70,1,""],["Aditya Padole",1,0,0,0,4,44,5709,117,1,""],["Anshuman Pawar",1,0,0,0,4,34,7045,194,0,""],["Deep Ikhar",1,0,0,0,4,29,7972,248,0,""],["Kovidh Makadam",1,0,0,0,4,55,4232,50,1,""],["Parth Thakur",1,0,0,0,4,30,7667,227,0,""],["Praneel Wakode",1,0,0,0,4,56,3980,44,1,""],["Sahas Rajgure",1,0,0,0,4,49,5038,81,1,""],["Samar Chandankar",1,0,0,0,4,72,2314,14,1,""],["Sanskar Pathak",1,0,0,0,4,6,9621,381,0,""],["Shivraj Shelke",1,0,0,0,4,45,5408,104,1,""],["Shree Paliwal",1,0,0,0,4,49,5038,81,1,""],["Smeet Paturde",1,0,0,0,4,33,7298,209,0,""],["Tejas Sanap",1,0,0,0,4,32,7571,219,0,""],["Utkarsh Khande",1,0,0,0,4,33,7298,209,0,""],["Vihan Yadav",1,0,0,0,4,39,6301,155,0,""],["Vrushank Kamble",1,0,0,0,4,40,6166,146,1,""],["Yash Rahulakar",1,0,0,0,4,26,890,6,0,""],["Yuvraj Lasankar",1,0,0,0,4,36,6811,176,0,""],["Aaradhya Chavan",1,0,1,0,4,61,3448,33,1,""],["Janhavi Dhekle",1,0,1,0,4,34,7045,194,0,""],["Krutika Pimpalkar",1,0,1,0,4,28,8099,262,0,""],["Pariniti Madavi",1,0,1,0,4,29,7972,248,0,""],["Purvi Wawge",1,0,1,0,4,17,9198,336,0,""],["Sambodhi Gawai",1,0,1,0,4,39,6301,155,0,""],["Samrudhi Adsod",1,0,1,0,4,63,3313,29,1,""],["Sanavi Behare",1,0,1,0,4,23,8665,299,0,""],["Shravani Gawande",1,0,1,0,4,48,5236,92,1,""],["Shreya Samudre",1,0,1,0,4,6,9621,381,0,""],["Shreya Ugale",1,0,1,0,4,18,9107,327,0,""],["Shruti Lonkar",1,0,1,0,4,23,8665,299,0,""],["Swara Bhimate",1,0,1,0,4,32,7571,219,0,""],["Swara Bonde",1,0,1,0,4,18,9107,327,0,""],["Tanvi Gawande",1,0,1,0,4,28,8099,262,0,""],["Vaishnavi Dighekar",1,0,1,0,4,27,8436,283,0,""],["Aaradhya Gulhane",1,0,0,0,4,30,7667,227,0,""],["Aaradhya Chawhale",1,0,0,0,4,30,792,3,0,"Second Runner-Up in School"],["Akshay Hukare",1,0,0,0,4,6,9621,381,0,""],["Aman Khandare",1,0,0,0,4,17,9198,336,0,""],["Anshuman Pusadkar",1,0,0,0,4,43,5972,131,1,""],["Anuj Bhende",1,0,0,0,4,44,5709,117,1,""],["Arnav Bhoyar",1,0,0,0,4,36,6811,176,0,""],["Devansh Borkar",1,0,0,0,4,36,6811,176,0,""],["Mayank Nimbhorkar",1,0,0,0,4,44,5709,117,1,""],["Naman Sharma",1,0,0,0,4,17,9198,336,0,""],["Prathamesh Pethe",1,0,0,0,4,32,7571,219,0,""],["Rutvik Bhadke",1,0,0,0,4,48,620,1,1,"First in School"],["Sarthak Pethe",1,0,0,0,4,33,7298,209,0,""],["Soham Kholapure",1,0,0,0,4,17,9198,336,0,""],["Swaraj Dongare",1,0,0,0,4,30,7667,227,0,""],["Vansh Ughade",1,0,0,0,4,44,5709,117,1,""],["Vidit Kamble",1,0,0,0,4,30,147,5,0,""],["Yash Mandavdhare",1,0,0,0,4,23,8665,299,0,""],["Yash Borkar",1,0,0,0,4,41,6136,143,1,""],["Yash Shrikhandkar",1,0,0,0,4,38,6610,168,0,""],["Aaradhya Dhembre",1,0,1,0,5,44,9154,155,1,""],["Anvi Vyas",1,0,1,0,5,38,11238,205,0,""],["Athshree Barde",1,0,1,0,5,23,15567,339,0,""],["Bhagyshree Chaudhari",1,0,1,0,5,12,17421,403,0,""],["Harshika Jangada",1,0,1,0,5,39,10510,186,0,""],["Hitakshee Kharkale",1,0,1,0,5,76,2611,22,1,""],["Kanak Godhankar",1,0,1,0,5,19,16552,375,0,""],["Krushnali Gedam",1,0,1,0,5,27,14952,313,0,""],["Mahak Sharma",1,0,1,0,5,82,1918,12,1,""],["Saee Pawar",1,0,1,0,5,56,5819,82,1,""],["Sharanya Wankhade",1,0,1,0,5,12,17421,403,0,""],["Aaradhya Kavimandan",1,0,0,0,5,28,14253,294,0,""],["Aaradhya Sawade",1,0,0,0,5,16,17123,394,0,""],["Aarav Wankhade",1,0,0,0,5,66,3895,38,1,""],["Aditya Ubale",1,0,0,0,5,55,6224,89,1,""],["Ansh Bhande",1,0,0,0,5,59,5654,78,1,""],["Arnav Hantodkar",1,0,0,0,5,55,6224,89,1,""],["Daksh Khursade",1,0,0,0,5,55,6224,89,1,""],["Darshan Bhagat",1,0,0,0,5,36,11771,220,0,""],["Pradhnyesh Pasarkar",1,0,0,0,5,59,5654,78,1,""],["Prathemesh Sharma",1,0,0,0,5,71,3181,29,1,""],["Rudra Pawar",1,0,0,0,5,22,15949,358,0,""],["Sarthak Meshram",1,0,0,0,5,27,14952,313,0,""],["Sarvambh Sawarkar",1,0,0,0,5,28,14253,294,0,""],["Shambhu Shinganjude",1,0,0,0,5,56,5819,82,1,""],["Shlesh Nanir",1,0,0,0,5,28,14253,294,0,""],["Spandan Shirbhate",1,0,0,0,5,28,14253,294,0,""],["Sunny Tekam",1,0,0,0,5,33,12480,244,0,""],["Swaraj Gaigole",1,0,0,0,5,76,2611,22,1,""],["Swarid Pandya",1,0,0,0,5,23,15567,339,0,""],["Swarup Bhende",1,0,0,0,5,61,4704,60,1,""],["Vihan Takpire",1,0,0,0,5,22,15949,358,0,""],["Vishrut Akarte",1,0,0,0,5,39,10510,186,0,""],["Yatharth Bijawe",1,0,0,0,5,23,15567,339,0,""],["Anaya Dagwale",1,0,1,0,5,22,15949,358,0,""],["Gargi Patil",1,0,1,0,5,28,14253,294,0,""],["Gargi Fuladi",1,0,1,0,5,28,14253,294,0,""],["Nandini Meshram",1,0,1,0,5,16,17123,394,0,""],["Nidhi Dhere",1,0,1,0,5,33,12480,244,0,""],["Ojaswi Sawake",1,0,1,0,5,44,9154,155,1,""],["Sharvari Swargiya",1,0,1,0,5,33,12480,244,0,""],["Shree Kale",1,0,1,0,5,33,12480,244,0,""],["Shreya Chauhan",1,0,1,0,5,22,15949,358,0,""],["Swara Adsod",1,0,1,0,5,28,14253,294,0,""],["Tanya Raibole",1,0,1,0,5,49,8001,130,1,""],["Aaradhya Shingrup",1,0,0,0,5,17,16655,377,0,""],["Aarav Bhende",1,0,0,0,5,34,12026,231,0,""],["Aarov Sawant",1,0,0,0,5,44,9154,155,1,""],["Aayush Swargiya",1,0,0,0,5,49,8001,130,1,""],["Aaryesh Munde",1,0,0,0,5,55,6224,89,1,""],["Abhyudya Tare",1,0,0,0,5,34,12026,231,0,""],["Atharv Gawande",1,0,0,0,5,66,3895,38,1,""],["Bhavik Kohale",1,0,0,0,5,30,13419,273,0,""],["Chaitanya Dighade",1,0,0,0,5,23,15567,339,0,""],["Chinmay Thakare",1,0,0,0,5,39,10510,186,0,""],["Daksh Panchal",1,0,0,0,5,16,17123,394,0,""],["Krishan Chaware",1,0,0,0,5,17,16655,377,0,""],["Mandar Patil",1,0,0,0,5,44,9154,155,1,""],["Nimish Kulkarni",1,0,0,0,5,6,17886,419,0,""],["Pratik Kove",1,0,0,0,5,44,9154,155,1,""],["Ram Kalhane",1,0,0,0,5,16,17123,394,0,""],["Samarth Shriwas",1,0,0,0,5,6,17886,419,0,""],["Shaurya Bhakare",1,0,0,0,5,30,13419,273,0,""],["Shree Kanse",1,0,0,0,5,50,7332,119,1,""],["Swaraj Mehere",1,0,0,0,5,44,9154,155,1,""],["Tanmay Thakare",1,0,0,0,5,50,7332,119,1,""],["Yatharth Khot",1,0,0,0,5,32,13232,266,0,""],["Yug Khadse",1,0,0,0,5,65,4333,48,1,""],["Aradhya Bhagat",1,0,1,0,5,55,6224,89,1,""],["Charu Tardeja",1,0,1,0,5,33,12480,244,0,""],["Gauri Bhopale",1,0,1,0,5,44,9154,155,1,""],["Inaya Jaypurwala",1,0,1,0,5,39,10510,186,0,""],["Kavya Rohankar",1,0,1,0,5,25,15495,333,0,""],["Khushi Kunjam",1,0,1,0,5,76,2611,22,1,""],["Lekhika Chopde",1,0,1,0,5,27,14952,313,0,""],["Mokshada Pinge",1,0,1,0,5,11,17587,411,0,""],["Nirali Ghanmode",1,0,1,0,5,24,15509,335,0,""],["Ojasvi Sonwal",1,0,1,0,5,82,1918,12,1,""],["Pakhi Karwa",1,0,1,0,5,55,6224,89,1,""],["Pari Sawant",1,0,1,0,5,39,10510,186,0,""],["Radha Somalwar",1,0,1,0,5,43,9874,172,1,""],["Shreya Sawai",1,0,1,0,5,24,15509,335,0,""],["Shruti Joshi",1,0,1,0,5,28,14253,294,0,""],["Aaradhy Pinjarkar",1,0,0,0,5,22,15949,358,0,""],["Abhinav Khandare",1,0,1,0,5,26,15420,329,0,""],["Advait Sable",1,0,1,0,5,28,14253,294,0,""],["Agastya Jawanjal",1,0,1,0,5,33,12480,244,0,""],["Arihant Sable",1,0,1,0,5,55,6224,89,1,""],["Devanshu Belsare",1,0,1,0,5,37,11712,217,0,""],["Divyanshu Pokale",1,0,1,0,5,65,4333,48,1,""],["Harsh Nichat",1,0,1,0,5,54,6839,105,1,""],["Krushna Tikande",1,0,1,0,5,17,16655,377,0,""],["Raj Mahulkar",1,0,1,0,5,22,15949,358,0,""],["Rajveer Gudadhe",1,0,1,0,5,30,13419,273,0,""],["Samar Walsinge",1,0,1,0,5,25,15495,333,0,""],["Samay Chaudhary",1,0,1,0,5,23,15567,339,0,""],["Sarvesh Gulhane",1,0,1,0,5,16,17123,394,0,""],["Soham Akhare",1,0,1,0,5,71,3181,29,1,""],["Vihan Khadse",1,0,1,0,5,48,8521,141,1,""],["Vishwajeet Deshmukh",1,0,1,0,5,66,3895,38,1,""],["Vedant Nawalkar",1,0,1,0,5,30,2928,3,0,"Second Runner-Up in School"],["Aaradhya Ingole",1,0,1,0,5,49,8001,130,1,""],["Aarohi Nannaware",1,0,1,0,5,17,16655,377,0,""],["Aditi Tiwari",1,0,1,0,5,39,10510,186,0,""],["Aarya Sharma",1,0,1,0,5,17,16655,377,0,""],["Aanandi Watane",1,0,1,0,5,16,17123,394,0,""],["Ishita Tiwari",1,0,1,0,5,62,4574,57,1,""],["Janhavi Bonde",1,0,1,0,5,38,11238,205,0,""],["Lavanya Ambildhuke",1,0,1,0,5,6,17886,419,0,""],["Liba Khan",1,0,1,0,5,17,16655,377,0,""],["Sampada Khokale",1,0,1,0,5,26,15420,329,0,""],["Shankavi Shriwas",1,0,1,0,5,29,14105,292,0,""],["Shrawani Ambadkar",1,0,1,0,5,43,9874,172,1,""],["Shrishti Rathod",1,0,1,0,5,54,6839,105,1,""],["Umang Solanke",1,0,1,0,5,12,17421,403,0,""],["Vanshika Singh",1,0,1,0,5,60,5232,71,1,""],["Vibhawari Khanande",1,0,1,0,5,17,16655,377,0,""],["Aaradhy Pande",1,0,0,0,5,27,14952,313,0,""],["Advait Bijwal",1,0,0,0,5,34,12026,231,0,""],["Arnav Akhare",1,0,0,0,5,61,4704,60,1,""],["Amrish Patil",1,0,0,0,5,6,17886,419,0,""],["Ayush Korat",1,0,0,0,5,93,1095,4,1,""],["Chaitanya Dhoke",1,0,0,0,5,40,10286,181,1,""],["Devansh Patil",1,0,0,0,5,23,15567,339,0,""],["Manas Pawar",1,0,0,0,5,22,15949,358,0,""],["Manas Ghuse",1,0,0,0,5,28,14253,294,0,""],["Nirav Shendre",1,0,0,0,5,22,15949,358,0,""],["Praharsh Nandeshwar",1,0,0,0,5,38,11238,205,0,""],["Rudresh Ghoderao",1,0,0,0,5,39,10510,186,0,""],["Sasmit Batho",1,0,0,0,5,33,12480,244,0,""],["Sayyad Asifali",1,0,0,0,5,50,7332,119,1,""],["Shiv Chaudhari",1,0,0,0,5,111,386,1,1,"First in School"],["Smit Khodke",1,0,0,0,5,51,7117,114,1,""],["Sonish Israni",1,0,0,0,5,30,13419,273,0,""],["Vallabh Thakare",1,0,0,0,5,54,6839,105,1,""],["Veer Kotecha",1,0,0,0,5,28,14253,294,0,""],["Viraaj Deshmukh",1,0,0,0,5,39,10510,186,0,""],["Aaradhya Navghare",1,0,1,0,5,30,13419,273,0,""],["Asmita Khobragade",1,0,1,0,5,30,13419,273,0,""],["Avni Bankar",1,0,1,0,5,26,15420,329,0,""],["Kattyayani Mohod",1,0,1,0,5,55,6224,89,1,""],["Madhavi Gujalmane",1,0,1,0,5,17,16655,377,0,""],["Manushee Wathodkar",1,0,1,0,5,44,9154,155,1,""],["Niyati Tantarpale",1,0,1,0,5,60,5232,71,1,""],["Parushni Rane",1,0,1,0,5,36,11771,220,0,""],["Pranjal",1,0,1,0,5,49,8001,130,1,""],["Riya Lokhande",1,0,1,0,5,24,15509,335,0,""],["Sahitic",1,0,1,0,5,30,13419,273,0,""],["Shatayushi Shinde",1,0,1,0,5,61,4704,60,1,""],["Shravani Chaudhari",1,0,1,0,5,6,17886,419,0,""],["Shruti Yadav",1,0,1,0,5,71,3181,29,1,""],["Swara Banarse",1,0,1,0,5,34,12026,231,0,""],["Vaidehi Darvekhar",1,0,1,0,5,17,16655,377,0,""],["Veera Kalyamwar",1,0,1,0,5,61,4704,60,1,""],["Vishuddhi Dongare",1,0,1,0,5,17,16655,377,0,""],["Aarush Jawarkar",1,0,0,0,5,31,13379,270,0,""],["Adnyesh Dharme",1,0,0,0,5,34,12026,231,0,""],["Advait Shrikhande",1,0,0,0,5,30,13419,273,0,""],["Arjun Nahale",1,0,0,0,5,0,18159,433,0,""],["Bhargav Kalapad",1,0,0,0,5,39,10510,186,0,""],["Dhruve Kukreja",1,0,0,0,5,26,15420,329,0,""],["Himanshu Pingale",1,0,0,0,5,16,17123,394,0,""],["Ishwar Gunjate",1,0,0,0,5,0,18159,433,0,""],["Kanishk Kinger",1,0,0,0,5,30,13419,273,0,""],["Malhar Patil",1,0,0,0,5,28,14253,294,0,""],["Naitik Adwani",1,0,0,0,5,33,12480,244,0,""],["Rajveer Jalit",1,0,0,0,5,44,9154,155,1,""],["Reehansh Nikose",1,0,0,0,5,56,5819,82,1,""],["Shreeraj Koturwar",1,0,0,0,5,30,13419,273,0,""],["Shriansh Sahu",1,0,0,0,5,44,9154,155,1,""],["Siddhant Deshmukh",1,0,0,0,5,45,8719,146,1,""],["Tanmay Inwate",1,0,0,0,5,39,10510,186,0,""],["Umang Shahare",1,0,0,0,5,27,14952,313,0,""],["Aarohi Bihar",1,0,1,0,5,37,11712,217,0,""],["Anvi Deshmukh",1,0,1,0,5,65,4333,48,1,""],["Anvi Borekar",1,0,1,0,5,33,12480,244,0,""],["Devanshi Jagtap",1,0,1,0,5,35,11959,228,0,""],["Lavishka Mattani",1,0,1,0,5,28,14253,294,0,""],["Madhura Atkari",1,0,1,0,5,12,17421,403,0,""],["Maithili Ugale",1,0,1,0,5,33,12480,244,0,""],["Mehera Puri",1,0,1,0,5,27,14952,313,0,""],["Poorvi Kulkarni",1,0,1,0,5,50,7332,119,1,""],["Suhani Bangde",1,0,1,0,5,22,15949,358,0,""],["Survi Kale",1,0,1,0,5,27,14952,313,0,""],["Swara Vivek",1,0,1,0,5,66,3895,38,1,""],["Swara Kawade",1,0,1,0,5,56,5819,82,1,""],["Vedashree Deshmukh",1,0,1,0,5,50,7332,119,1,""],["Arnav Pokale",1,0,0,0,5,33,12480,244,0,""],["Anmol Gupta",1,0,0,0,5,22,15949,358,0,""],["Divayanshu Bundele",1,0,0,0,5,0,18159,433,0,""],["Gopal Kolhe",1,0,0,0,5,55,6224,89,1,""],["Hardik Raut",1,0,0,0,5,22,15949,358,0,""],["Krushna Mote",1,0,0,0,5,56,5819,82,1,""],["Lakshya Rahangdale",1,0,0,0,5,67,3585,36,1,""],["Parth Zarkar",1,0,0,0,5,11,17587,411,0,""],["Rajveer Chavan",1,0,0,0,5,50,7332,119,1,""],["Saksham Tayade",1,0,0,0,5,30,13419,273,0,""],["Samarth Dahake",1,0,0,0,5,33,12480,244,0,""],["Siddesh Kawathkar",1,0,0,0,5,38,11238,205,0,""],["Siddhant Verma",1,0,0,0,5,49,8001,130,1,""],["Shrikant Atkare",1,0,0,0,5,27,14952,313,0,""],["Suyog Deshmukh",1,0,0,0,5,71,3181,29,1,""],["Swaraj Deshmukh",1,0,0,0,5,33,12480,244,0,""],["Tejas Deshmukh",1,0,0,0,5,6,17886,419,0,""],["Vansh Daga",1,0,0,0,5,58,5729,80,1,""],["Vedant Thakre",1,0,0,0,5,30,13419,273,0,""],["Yashvadhan Shirbhate",1,0,0,0,5,40,10286,181,1,""],["Ram Bhateja",1,0,0,0,5,44,9154,155,1,""],["Aradhya Mhaske",1,0,1,1,6,81,2082,14,1,""],["Aaradhya Jagtap",1,0,1,1,6,27,14952,313,0,""],["Ankita Bharti",1,0,1,1,6,81,2082,14,1,""],["Darshika Tiwari",1,0,1,1,6,36,11771,220,0,""],["Janvi Agarwal",1,0,1,1,6,38,11238,205,0,""],["Maitri Gawai",1,0,1,1,6,12,17421,403,0,""],["Nidhi Ganjare",1,0,1,1,6,34,12026,231,0,""],["Nidhi Rajani",1,0,1,1,6,23,15567,339,0,""],["Prathana Dhikyav",1,0,1,1,6,6,17886,419,0,""],["Saanvi Gakhare",1,0,1,1,6,34,12026,231,0,""],["Swara Ghate",1,0,1,1,6,28,14253,294,0,""],["Aadesh Parekar",1,0,0,1,6,42,10145,175,1,""],["Aaradhy Ambulkar",1,0,0,1,6,55,6224,89,1,""],["Adhiraj Jayale",1,0,0,1,6,64,4522,53,1,""],["Aniket Kadu",1,0,0,1,6,34,12026,231,0,""],["Arnav Raut",1,0,0,1,6,17,16655,377,0,""],["Bhavnesh Jhamani",1,0,0,1,6,23,15567,339,0,""],["Harshit Chauhan",1,0,0,1,6,16,17123,394,0,""],["M.Affan Khan",1,0,0,1,6,61,4704,60,1,""],["Nikhil Chavhan",1,0,0,1,6,44,9154,155,1,""],["Ojas Warhade",1,0,0,1,6,61,4704,60,1,""],["Parth Bondre",1,0,0,1,6,6,17886,419,0,""],["Rudra Chauhan",1,0,0,1,6,0,18159,433,0,""],["Sahil Gharde",1,0,0,1,6,28,3188,5,0,""],["Samarth Thawkar",1,0,0,1,6,56,827,1,1,"First in School"],["Shlok Khambayatkar",1,0,0,1,6,23,15567,339,0,""],["Swarajsingh Thakur",1,0,0,1,6,30,2928,3,0,"Second Runner-Up in School"],["Annie Gangwani",1,0,1,1,6,35,11959,228,0,""],["Baneet kaur Nanda",1,0,1,1,6,44,9154,155,1,""],["Dhanvi Doifode",1,0,1,1,6,55,6224,89,1,""],["Drushti Kewalramani",1,0,1,1,6,17,16655,377,0,""],["Gayatri Pachkawade",1,0,1,1,6,54,6839,105,1,""],["Ishita Prasad",1,0,1,1,6,6,17886,419,0,""],["Janvi Titarmare",1,0,1,1,6,83,1721,7,1,""],["Siddhi Athate",1,0,1,1,6,83,1721,7,1,""],["Stuti Pandey",1,0,1,1,6,38,11238,205,0,""],["Swarashri Lanjewar",1,0,1,1,6,67,3585,36,1,""],["Vinti Asudani",1,0,1,1,6,83,1721,7,1,""],["Arsh Harde",1,0,0,1,6,6,17886,419,0,""],["Chaitanya Thakare",1,0,0,1,6,33,12480,244,0,""],["Charvik Gawande",1,0,0,1,6,22,15949,358,0,""],["Daivik Jadhav",1,0,0,1,6,83,1721,7,1,""],["Devansh Dhawale",1,0,0,1,6,33,12480,244,0,""],["Gyaanav Jiwane",1,0,0,1,6,37,11712,217,0,""],["Kanishk Shakya",1,0,0,1,6,31,13379,270,0,""],["Revansh Balkhande",1,0,0,1,6,55,6224,89,1,""],["Shashwat Shendge",1,0,0,1,6,39,10510,186,0,""],["Swaraj Kathe",1,0,0,1,6,54,6839,105,1,""],["Vaibhav Patel",1,0,0,1,6,71,3181,29,1,""],["Vihaan Patil",1,0,0,1,6,71,3181,29,1,""],["Yugant Raut",1,0,0,1,6,6,17886,419,0,""],["Aanandi Bhatkar",1,0,1,1,6,41,10246,180,1,""],["Aastha Gawande",1,0,1,1,6,46,8630,143,1,""],["Bhakti Jadhav",1,0,1,1,6,27,14952,313,0,""],["Dipal Kandalkar",1,0,1,1,6,56,5819,82,1,""],["Gracy Dhakade",1,0,1,1,6,22,15949,358,0,""],["Ishika Gupta",1,0,1,1,6,27,14952,313,0,""],["Kartiki Borkhade",1,0,1,1,6,50,7332,119,1,""],["Nidhi Dhankari",1,0,1,1,6,22,15949,358,0,""],["Niyati Dhoke",1,0,1,1,6,32,13232,266,0,""],["Ravee Kadu",1,0,1,1,6,23,15567,339,0,""],["Sara Jadhao",1,0,1,1,6,55,6224,89,1,""],["Vidhisha Zambani",1,0,1,1,6,22,15949,358,0,""],["Yashada Deshmukh",1,0,1,1,6,51,7117,114,1,""],["Aaradhya Bhute",1,0,0,1,6,55,6224,89,1,""],["Amar Metkar",1,0,0,1,6,38,11238,205,0,""],["Anant Metkar",1,0,0,1,6,60,5232,71,1,""],["Ansh Dhalwani",1,0,0,1,6,61,4704,60,1,""],["Bhavesh Chikhalkar",1,0,0,1,6,49,8001,130,1,""],["Chinmay Gulhane",1,0,0,1,6,50,7332,119,1,""],["Devansh Mahure",1,0,0,1,6,54,6839,105,1,""],["Jatin Motvani",1,0,0,1,6,28,14253,294,0,""],["Naksh Shrimali",1,0,0,1,6,49,8001,130,1,""],["Prasad Mankar",1,0,0,1,6,34,12026,231,0,""],["Pratyush Chawhani",1,0,0,1,6,6,17886,419,0,""],["Rajveer Aware",1,0,0,1,6,77,2285,18,1,""],["Roman Khan",1,0,0,1,6,45,8719,146,1,""],["Sarthak Andhale",1,0,0,1,6,49,8001,130,1,""],["Sarthak Fate",1,0,0,1,6,23,15567,339,0,""],["Sharavn Patil",1,0,0,1,6,60,5232,71,1,""],["Shourya Gawande",1,0,0,1,6,35,11959,228,0,""],["Subodh Nakhale",1,0,0,1,6,55,6224,89,1,""],["Vedant Patil",1,0,0,1,6,72,2886,28,1,""],["Vihan Kalmegh",1,0,0,1,6,66,3895,38,1,""],["Yuvraj Nagargoje",1,0,0,1,6,50,7332,119,1,""],["Aaradhya Bawaskar",1,0,1,1,6,66,3895,38,1,""],["Aaradhya Ade",1,0,1,1,6,33,12480,244,0,""],["Aaradhya Jaiswal",1,0,1,1,6,43,9874,172,1,""],["Aditi Aherwar",1,0,1,1,6,40,10286,181,1,""],["Anandi Dawake",1,0,1,1,6,81,2082,14,1,""],["Haniya Khan",1,0,1,1,6,45,8719,146,1,""],["Hemashri Vighe",1,0,1,1,6,23,15567,339,0,""],["Jivika Rawlani",1,0,1,1,6,27,14952,313,0,""],["Sayali Dhaye",1,0,1,1,6,66,3895,38,1,""],["Shriya Jaswante",1,0,1,1,6,56,5819,82,1,""],["Trushna Nistane",1,0,1,1,6,39,10510,186,0,""],["Aaradhya Mahalle",1,0,0,1,6,50,7332,119,1,""],["Aaradhya Tayde",1,0,0,1,6,39,10510,186,0,""],["Advay Chaudhari",1,0,0,1,6,23,15567,339,0,""],["Ameya Tamgadge",1,0,0,1,6,34,12026,231,0,""],["Arnav Dawange",1,0,0,1,6,45,8719,146,1,""],["Arnav Patne",1,0,0,1,6,61,4704,60,1,""],["Arpit Aherwar",1,0,0,1,6,61,4704,60,1,""],["Athang Awsare",1,0,0,1,6,11,17587,411,0,""],["Darshil Bobade",1,0,0,1,6,30,13419,273,0,""],["Devesh Jivtani",1,0,0,1,6,34,12026,231,0,""],["Hardik Dembla",1,0,0,1,6,46,8630,143,1,""],["Hitanshu Keche",1,0,0,1,6,51,7117,114,1,""],["Karan Jadhav",1,0,0,1,6,61,4704,60,1,""],["Krishnakant Deshmukh",1,0,0,1,6,83,1721,7,1,""],["Lakshya Bode",1,0,0,1,6,62,4574,57,1,""],["Mohd.Ayan Sajid",1,0,0,1,6,39,10510,186,0,""],["Prayas Bakale",1,0,0,1,6,11,17587,411,0,""],["Pushkar Mendhe",1,0,0,1,6,45,8719,146,1,""],["Ramakant Vande",1,0,0,1,6,27,14952,313,0,""],["Sarthak Vaidya",1,0,0,1,6,24,15509,335,0,""],["Satyam Rohankar",1,0,0,1,6,38,11238,205,0,""],["Shivraj Sagane",1,0,0,1,6,42,10145,175,1,""],["Sparsh Ambekar",1,0,0,1,6,39,10510,186,0,""],["Yadnyesh Dandge",1,0,0,1,6,28,14253,294,0,""],["Aaradhya Chavhan",1,0,1,1,6,97,931,3,1,"Second Runner-Up in School"],["Aarushi Getme",1,0,1,1,6,29,14105,292,0,""],["Devanshi Akolkar",1,0,1,1,6,42,10145,175,1,""],["Kinjal Meshram",1,0,1,1,6,36,11771,220,0,""],["Lavanya Pandit",1,0,1,1,6,17,16655,377,0,""],["Mrunal Dharme",1,0,1,1,6,93,1095,4,1,""],["Mugdha Bannore",1,0,1,1,6,36,11771,220,0,""],["Niyati Chandak",1,0,1,1,6,17,16655,377,0,""],["Priyal Rathod",1,0,1,1,6,17,16655,377,0,""],["Revati Gole",1,0,1,1,6,38,11238,205,0,""],["Riya Nawerkhle",1,0,1,1,6,36,11771,220,0,""],["Swara Athilkar",1,0,1,1,6,64,4522,53,1,""],["Vanshika Joshi",1,0,1,1,6,11,17587,411,0,""],["Vedahi Tardeja",1,0,1,1,6,77,2285,18,1,""],["Anay Damedhar",1,0,0,1,6,48,8521,141,1,""],["Apurv Dhend",1,0,0,1,6,44,9154,155,1,""],["Arjun Argade",1,0,0,1,6,11,17587,411,0,""],["Arnav Deshmukh",1,0,0,1,6,23,15567,339,0,""],["Arush Patil",1,0,0,1,6,49,8001,130,1,""],["Aryan Chavhan",1,0,0,1,6,27,14952,313,0,""],["Atharva Argade",1,0,0,1,6,36,11771,220,0,""],["Gopal Dhokne",1,0,0,1,6,45,8719,146,1,""],["Manas Nahata",1,0,0,1,6,44,9154,155,1,""],["Naksh Makhe",1,0,0,1,6,73,2786,26,1,""],["Nihal Raghuvanshi",1,0,0,1,6,40,10286,181,1,""],["Om Chavhan",1,0,0,1,6,28,14253,294,0,""],["Prasang Dafe",1,0,0,1,6,17,16655,377,0,""],["Raj Tidke",1,0,0,1,6,23,15567,339,0,""],["Rudra Fanje",1,0,0,1,6,22,15949,358,0,""],["Samyak Sonone",1,0,0,1,6,23,15567,339,0,""],["Sarthak Dhabale",1,0,0,1,6,44,9154,155,1,""],["Sarthak Raut",1,0,0,1,6,39,10510,186,0,""],["Shrut Garode",1,0,0,1,6,28,14253,294,0,""],["Soham Ingole",1,0,0,1,6,33,12480,244,0,""],["Tanmay Dhamecha",1,0,0,1,6,33,12480,244,0,""],["Aabha Lonkar",1,0,1,1,6,38,11238,205,0,""],["Aaradhya",1,0,1,1,6,36,11771,220,0,""],["Annushri Khadatakar",1,0,1,1,6,33,12480,244,0,""],["Anushka Shinde",1,0,1,1,6,60,5232,71,1,""],["Asmi Hore",1,0,1,1,6,31,13379,270,0,""],["Disha Varma",1,0,1,1,6,65,4333,48,1,""],["Diya Satpute",1,0,1,1,6,46,8630,143,1,""],["Gargi Jivtode",1,0,1,1,6,12,17421,403,0,""],["Gunjan (new)",1,0,1,1,6,38,11238,205,0,""],["Harshita Khatri",1,0,1,1,6,75,2746,25,1,""],["Ishita Khond",1,0,1,1,6,61,4704,60,1,""],["Ishwari Wagh",1,0,1,1,6,54,6839,105,1,""],["Kasturi Navghare",1,0,1,1,6,53,7044,112,1,""],["Riddhi Pranjale",1,0,1,1,6,27,14952,313,0,""],["Rujuta Tayade",1,0,1,1,6,50,7332,119,1,""],["Sanskruti Bhelkar",1,0,1,1,6,12,17421,403,0,""],["Satwi Ghodeswar",1,0,1,1,6,27,14952,313,0,""],["Shravani Kalane",1,0,1,1,6,55,6224,89,1,""],["Siddhi Munot",1,0,1,1,6,65,4333,48,1,""],["Aaradhya Kadu",1,0,0,1,6,49,8001,130,1,""],["Aditya Jadhavar",1,0,0,1,6,11,17587,411,0,""],["Anagh Dhawale",1,0,0,1,6,42,10145,175,1,""],["Arnav",1,0,0,1,6,39,10510,186,0,""],["Aryan Bramhan",1,0,0,1,6,60,5232,71,1,""],["Maitreya Abhyankar",1,0,0,1,6,105,539,2,1,"First Runner-Up in School"],["Mayuresh Rangarkar",1,0,0,1,6,39,10510,186,0,""],["Nayan Pali",1,0,0,1,6,11,17587,411,0,""],["Om Sune",1,0,0,1,6,42,10145,175,1,""],["Prabal Gaikwad",1,0,0,1,6,16,17123,394,0,""],["Sarvesh Patil",1,0,0,1,6,66,3895,38,1,""],["Shreyash Walale",1,0,0,1,6,17,16655,377,0,""],["Tanmay Akhare",1,0,0,1,6,28,14253,294,0,""],["Tejas Bhande",1,0,0,1,6,30,13419,273,0,""],["Vashistha Deshmukh",1,0,0,1,6,33,12480,244,0,""],["Aaradhya Kharbade",1,0,1,1,6,60,5232,71,1,""],["Aaradhya Dhumale",1,0,1,1,6,54,1008,2,1,"First Runner-Up in School"],["Bela Ingale",1,0,1,1,6,58,5729,80,1,""],["Rajvi Deshmukh",1,0,1,1,6,40,10286,181,1,""],["Saee Nikam",1,0,1,1,6,45,8719,146,1,""],["Sampada Jagtap",1,0,1,1,6,52,7075,113,1,""],["Sayee Deshmukh",1,0,1,1,6,30,13419,273,0,""],["Siddhi Thakare",1,0,1,1,6,32,13232,266,0,""],["Siddhi Dhote",1,0,1,1,6,30,13419,273,0,""],["Swara Jadhav",1,0,1,1,6,64,4522,53,1,""],["Abhay Wagh",1,0,0,1,6,32,13232,266,0,""],["Ansh Milke",1,0,0,1,6,6,17886,419,0,""],["Aryan Pund",1,0,0,1,6,38,11238,205,0,""],["Hardik Rahase",1,0,0,1,6,49,8001,130,1,""],["Janmesh Sharma",1,0,0,1,6,33,12480,244,0,""],["Kaiwalya Rawate",1,0,0,1,6,23,15567,339,0,""],["Krish Motwani",1,0,0,1,6,33,793,1,0,"First in School"],["Ram Ingale",1,0,0,1,6,34,12026,231,0,""],["Veer Chapke",1,0,0,1,6,44,9154,155,1,""],["Vedant Raut",1,0,0,1,6,39,10510,186,0,""],["Advika Hande",1,0,1,1,6,45,8719,146,1,""],["Anushka Madghe",1,0,1,1,6,73,2786,26,1,""],["Devyani Deshmukh",1,0,1,1,6,30,13419,273,0,""],["Heetanshi Dasiyani",1,0,1,1,6,71,3181,29,1,""],["Ishanvi Kesharwani",1,0,1,1,6,66,3895,38,1,""],["Khushi Deshmukh",1,0,1,1,6,30,13419,273,0,""],["Khushi Tetu",1,0,1,1,6,22,15949,358,0,""],["Ojaswi Kanade",1,0,1,1,6,23,15567,339,0,""],["Palak Meshram",1,0,1,1,6,30,13419,273,0,""],["Swarali Malokar",1,0,1,1,6,33,12480,244,0,""],["Unnati Meshram",1,0,1,1,6,77,2285,18,1,""],["Ansh Dongare",1,0,0,1,6,23,15567,339,0,""],["Anvit Dere",1,0,0,1,6,66,3895,38,1,""],["Avanish Bavaskar",1,0,0,1,6,51,7117,114,1,""],["Devanshu Dashmukhe",1,0,0,1,6,78,2156,17,1,""],["Divyanshu Khandelwal",1,0,0,1,6,51,7117,114,1,""],["Naman Suryavanshi",1,0,0,1,6,62,4574,57,1,""],["Rayan Baig",1,0,0,1,6,64,4522,53,1,""],["Rushabha Bhagwat",1,0,0,1,6,45,8719,146,1,""],["Samrat Ugokar",1,0,0,1,6,6,17886,419,0,""],["Saumitra Paradhkar",1,0,0,1,6,84,1677,6,1,""],["Shriyans Rathi",1,0,0,1,6,18,16571,376,0,""],["Soham Shivankar",1,0,0,1,6,34,12026,231,0,""],["Spandan Ukey",1,0,0,1,6,12,17421,403,0,""],["Viraj Aundhkar",1,0,0,1,6,77,2285,18,1,""],["Aadya Nerkar",1,0,1,1,7,53,8053,147,1,""],["Aanandi Khadse",1,0,1,1,7,47,9793,201,1,""],["Aaradhya Raut",1,0,1,1,7,50,8412,161,1,""],["Akshara",1,0,1,1,7,50,8412,161,1,""],["Akshita Toley",1,0,1,1,7,59,6356,102,1,""],["Akshra Thakre",1,0,1,1,7,59,6356,102,1,""],["Aradhya Kadu",1,0,1,1,7,43,11406,252,1,""],["Avanti Gawai",1,0,1,1,7,59,6356,102,1,""],["Gargi Karoddeo",1,0,1,1,7,59,6356,102,1,""],["Lavanya Deshmukh",1,0,1,1,7,36,13586,320,0,""],["Manasvi Gohatre",1,0,1,1,7,59,6356,102,1,""],["Manva Pable",1,0,1,1,7,47,9793,201,1,""],["Sejal Bhugal",1,0,1,1,7,44,10543,230,1,""],["Swara Borekar",1,0,1,1,7,34,13955,360,0,""],["Swara Seikdar",1,0,1,1,7,46,9852,207,1,""],["Yuvika Bajaj",1,0,1,1,7,16,19057,477,0,""],["Adiraj Chunade",1,0,0,1,7,55,7094,128,1,""],["Aditya Raut",1,0,0,1,7,44,10543,230,1,""],["Adweya Patil",1,0,0,1,7,32,15155,387,0,""],["Ameya Metker",1,0,0,1,7,47,9793,201,1,""],["Arjun Rajurker",1,0,0,1,7,48,9662,187,1,""],["Himaksh Tywade",1,0,0,1,7,43,11406,252,1,""],["Kaiwalya Bhadange",1,0,0,1,7,61,5315,78,1,""],["Khush Devda",1,0,0,1,7,49,9115,175,1,""],["Mandhata Tatte",1,0,0,1,7,48,9662,187,1,""],["Neerajkumar Singh",1,0,0,1,7,48,9662,187,1,""],["Preyanshu Bandewar",1,0,0,1,7,12,19312,482,0,""],["Rajdeep Chunade",1,0,0,1,7,48,9662,187,1,""],["Ranveer Patil",1,0,0,1,7,39,12148,289,0,""],["Shreyash Surdase",1,0,0,1,7,27,17028,443,0,""],["Tanishq Bawane",1,0,0,1,7,17,18724,470,0,""],["Virat Bajaj",1,0,0,1,7,43,11406,252,1,""],["Anushka Sontakke",1,0,1,1,7,36,13586,320,0,""],["Anushree Bharpte",1,0,1,1,7,39,12148,289,0,""],["Anushri Dhole",1,0,1,1,7,40,11835,275,1,""],["Devanshi Thakur",1,0,1,1,7,56,6597,113,1,""],["Diya Savarkar",1,0,1,1,7,56,6597,113,1,""],["Ishita Patil",1,0,1,1,7,66,4334,64,1,""],["Krishnai Mate",1,0,1,1,7,36,13586,320,0,""],["Palak Pande",1,0,1,1,7,50,8412,161,1,""],["Raavi Gawande",1,0,1,1,7,62,5112,75,1,""],["Rakhi Pande",1,0,1,1,7,45,9964,213,1,""],["Rashi Bangar",1,0,1,1,7,36,13586,320,0,""],["Riya Bhatkar",1,0,1,1,7,55,7094,128,1,""],["Samruddhi Dawane",1,0,1,1,7,36,13586,320,0,""],["Sanvi Waghmare",1,0,1,1,7,30,15403,395,0,""],["Sharvari Umate",1,0,1,1,7,40,11835,275,1,""],["Shravani Kalbande",1,0,1,1,7,29,16091,424,0,""],["Vanshika Gundaiyya",1,0,1,1,7,29,16091,424,0,""],["Anish Gulhane",1,0,0,1,7,55,7094,128,1,""],["Anshuman Hajare",1,0,0,1,7,6,19774,492,0,""],["Anush Agrawal",1,0,0,1,7,30,15403,395,0,""],["Arjun Mete",1,0,0,1,7,30,15403,395,0,""],["Aryan Hingaspure",1,0,0,1,7,67,3858,55,1,""],["Ishan Kate",1,0,0,1,7,60,5864,90,1,""],["Lokesh Rathod",1,0,0,1,7,56,6597,113,1,""],["Manav Awasthi",1,0,0,1,7,38,12936,306,0,""],["Naitik Samarth",1,0,0,1,7,40,11835,275,1,""],["Parag Meshram",1,0,0,1,7,50,2132,2,1,"First Runner-Up in School"],["Pushkar Tapare",1,0,0,1,7,36,13586,320,0,""],["Saksham Makode",1,0,0,1,7,44,2999,4,1,""],["Sarthak Band",1,0,0,1,7,60,5864,90,1,""],["Shlok Burakle",1,0,0,1,7,51,8130,155,1,""],["Shreepad Thakare",1,0,0,1,7,30,15403,395,0,""],["Aastha Sahu",1,0,1,1,7,30,15403,395,0,""],["Aayushi Dhakare",1,0,1,1,7,46,9852,207,1,""],["Akhsara Avhale",1,0,1,1,7,33,14488,368,0,""],["Annanya Wasankar",1,0,1,1,7,48,9662,187,1,""],["Arushi Sharma",1,0,1,1,7,49,9115,175,1,""],["Darshita Tayade",1,0,1,1,7,46,9852,207,1,""],["Gauravi Nichat",1,0,1,1,7,16,19057,477,0,""],["Krishika Choudhari",1,0,1,1,7,38,12936,306,0,""],["Pahal Sapane",1,0,1,1,7,39,12148,289,0,""],["Parambi Sagane",1,0,1,1,7,27,17028,443,0,""],["Rudrhakshi Ingle",1,0,1,1,7,12,19312,482,0,""],["Sanika Khandare",1,0,1,1,7,50,8412,161,1,""],["Sayali Lad",1,0,1,1,7,0,20042,494,0,""],["Sharvari Kale",1,0,1,1,7,47,9793,201,1,""],["Shreya Wankhade",1,0,1,1,7,30,5290,7,0,""],["Trupti Pawar",1,0,1,1,7,49,9115,175,1,""],["Aadarsh Gulhane",1,0,0,1,7,54,7747,142,1,""],["Abhay Patel",1,0,0,1,7,22,17907,457,0,""],["Ajinkya Dindulkar",1,0,0,1,7,22,17907,457,0,""],["Anay Bagde",1,0,0,1,7,38,4030,6,0,""],["Anuj Rathod",1,0,0,1,7,28,16370,434,0,""],["Arnav Rahate",1,0,0,1,7,28,5710,9,0,""],["Arnav Kakde",1,0,0,1,7,50,397,1,1,"First in School"],["Arnesh Naranje",1,0,0,1,7,76,2568,32,1,""],["Darshan Vitalkar",1,0,0,1,7,50,397,1,1,"First in School"],["Divyansh Dhankani",1,0,0,1,7,38,12936,306,0,""],["Ishan Bherde",1,0,0,1,7,28,16370,434,0,""],["Jatin Shah",1,0,0,1,7,40,11835,275,1,""],["Mohd. Zishan Ahmed",1,0,0,1,7,48,2677,3,1,"Second Runner-Up in School"],["Manthan Raut",1,0,0,1,7,60,5864,90,1,""],["Natiik Barde",1,0,0,1,7,6,19774,492,0,""],["Raghav Dahantonde",1,0,0,1,7,49,9115,175,1,""],["Ram Kasat",1,0,0,1,7,61,5315,78,1,""],["Raunak Sharma",1,0,0,1,7,12,19312,482,0,""],["Rugved Hirode",1,0,0,1,7,45,9964,213,1,""],["Shivraj Shende",1,0,0,1,7,33,14488,368,0,""],["Siddhant Matode",1,0,0,1,7,71,3370,45,1,""],["Viraj Madane",1,0,0,1,7,44,10543,230,1,""],["Arnavi Kharde",1,0,1,1,7,55,7094,128,1,""],["Avanti Sharma",1,0,1,1,7,44,10543,230,1,""],["Laisha Kapoor",1,0,1,1,7,42,11677,257,1,""],["Nayna Lanjewar",1,0,1,1,7,39,12148,289,0,""],["Sharvari Pimpalkar",1,0,1,1,7,39,12148,289,0,""],["Shreya Khade",1,0,1,1,7,39,12148,289,0,""],["Swamini Sonar",1,0,1,1,7,11,19603,490,0,""],["Swasti Hirulkar",1,0,1,1,7,30,15403,395,0,""],["Vedika Thakre",1,0,1,1,7,30,15403,395,0,""],["Vedshree Kadu",1,0,1,1,7,33,14488,368,0,""],["Vaidehi Surwade",1,0,1,1,7,44,10543,230,1,""],["Aarush Dawake",1,0,0,1,7,84,1498,21,1,""],["Akshay Bakhtar",1,0,0,1,7,54,7747,142,1,""],["Arnav Wankhade",1,0,0,1,7,33,14488,368,0,""],["Arnav Mohod",1,0,0,1,7,12,19312,482,0,""],["Arnav Hirekar",1,0,0,1,7,32,15155,
+...
