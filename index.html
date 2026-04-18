@@ -5,7 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOS Performance Dashboard 2023–2025</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+  // Initialize on load
+document.addEventListener('DOMContentLoaded', function() {
+  // Populate school filter dropdown
+  const schoolSel = document.getElementById('schoolFilter');
+  _RAW_PAYLOAD.s.forEach((school, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = school;
+    schoolSel.appendChild(opt);
+  });
+  
+  // Trigger initial render
+  applyFilters();
+});
+</script>
 <style>
 :root{
   --gold:#FFD700;--gold-dim:#C8A800;--gold-dark:#7A6500;
