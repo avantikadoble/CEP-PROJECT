@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOS Performance Dashboard 2023–2025</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --gold:#FFD700;--gold-dim:#C8A800;--gold-dark:#7A6500;
+  --teal:#00E5C8;--teal-dim:#00B09A;--teal-dark:#005A4D;
+  --rose:#FF4F7B;--rose-dim:#C23358;--rose-dark:#6E1530;
+  --purple:#A855F7;--amber:#F59E0B;--blue:#60A5FA;--green:#34D399;
+  --bg:#0A0B0F;--bg2:#0F1018;--bg3:#151621;--bg4:#1C1E2E;--bg5:#222436;
+  --border:rgba(255,215,0,0.15);--border-teal:rgba(0,229,200,0.2);--border-rose:rgba(255,79,123,0.2);
+  --text:#E8E8F0;--text-dim:#8888A8;--text-faint:#444466;
+  --mono:'Space Mono',monospace;--sans:'Rajdhani',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;min-height:100vh;}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);
+  pointer-events:none;z-index:1000;}
+
+/* NAV */
+.nav-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 32px;gap:2px;overflow-x:auto;}
+.nav-tab{font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:12px 18px;cursor:pointer;color:var(--text-dim);border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;background:var(--bg2);border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+.header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--teal),var(--gold),var(--rose),transparent);}
+.header-title{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+.header-sub{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:1px;margin-top:4px;}
+.header-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.header-badge{font-family:var(--mono);font-size:10px;color:var(--teal);border:1px solid var(--border-teal);padding:4px 10px;border-radius:2px;text-transform:uppercase;letter-spacing:1px;}
+
+/* FILTERS */
+.filters{display:flex;align-items:center;gap:16px;padding:12px 32px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.filter-group{display:flex;align-items:center;gap:8px;}
+.filter-group label{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+.filter-group select{background:var(--bg3);color:var(--gold);border:1px solid var(--border);font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:2px;cursor:pointer;outline:none;min-width:160px;-webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23FFD700'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;transition:border-color .2s;}
+.filter-group select:hover{border-color:var(--gold);}
+.filter-sep{color:rgba(255,215,0,0.2);font-size:18px;}
+#filterSummary{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--teal);letter-spacing:1px;}
+
+/* PAGES */
+.page{display:none;}.page.active{display:block;}
+
+/* LAYOUT */
+.container{padding:24px 32px;display:grid;gap:20px;}
+.row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.row-1{display:grid;grid-template-columns:1fr;}
+@media(max-width:960px){.row-4,.row-3,.row-2{grid-template-columns:1fr 1fr;}}
+@media(max-width:560px){.row-4,.row-3,.row-2{grid-template-columns:1fr;}}
+
+/* KPI CARDS */
+.kpi-card{background:var(--bg3);border:1px solid var(--border);padding:16px 20px;border-radius:2px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi-card.gold::before{background:var(--gold);}
+.kpi-card.teal::before{background:var(--teal);}
+.kpi-card.rose::before{background:var(--rose);}
+.kpi-card.purple::before{background:var(--purple);}
+.kpi-card.amber::before{background:var(--amber);}
+.kpi-card.green::before{background:var(--green);}
+.kpi-label{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.kpi-value{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1;}
+.kpi-card.gold .kpi-value{color:var(--gold);}
+.kpi-card.teal .kpi-value{color:var(--teal);}
+.kpi-card.rose .kpi-value{color:var(--rose);}
+.kpi-card.purple .kpi-value{color:var(--purple);}
+.kpi-card.amber .kpi-value{color:var(--amber);}
+.kpi-card.green .kpi-value{color:var(--green);}
+.kpi-delta{font-family:var(--mono);font-size:10px;margin-top:6px;}
+.kpi-delta.up{color:var(--teal);}
+.kpi-delta.down{color:var(--rose);}
+.kpi-delta.neutral{color:var(--text-dim);}
+
+/* CARDS */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--bg4);flex-wrap:wrap;gap:6px;}
+.card-title{font-family:var(--mono);font-size:11px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+.card-badge{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;border:1px solid var(--border);padding:2px 6px;border-radius:1px;}
+.card-body{padding:20px;}
+
+.section-divider{font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:3px;text-transform:uppercase;padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.section-divider::before{content:'// ';color:var(--teal);}
+
+/* PODIUM */
+.podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:12px;min-height:180px;padding:10px 0;}
+.podium-item{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;min-width:0;}
+.podium-name{font-family:var(--mono);font-size:9px;color:var(--text-dim);text-align:center;letter-spacing:1px;word-break:break-word;}
+.podium-score{font-family:var(--mono);font-size:14px;font-weight:700;}
+.podium-sub{font-family:var(--mono);font-size:9px;color:var(--text-dim);}
+.podium-bar{width:100%;border-radius:2px 2px 0 0;display:flex;align-items:center;justify-content:center;}
+.p1 .podium-score{color:var(--gold);}
+.p2 .podium-score{color:var(--teal);}
+.p3 .podium-score{color:#C0C0C0;}
+
+/* TOPPER CARDS */
+.topper-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;}
+.topper-card{background:var(--bg4);border:1px solid var(--border);border-radius:2px;padding:14px 16px;position:relative;overflow:hidden;}
+.topper-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;}
+.topper-card.gold-accent::after{background:var(--gold);}
+.topper-card.teal-accent::after{background:var(--teal);}
+.topper-school{font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;}
+.topper-name{font-family:var(--sans);font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.topper-score-big{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--gold);}
+.topper-grade{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:1px;background:rgba(255,215,0,0.1);color:var(--gold);border:1px solid var(--border);}
+.topper-meta{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;}
+.topper-achieve{font-family:var(--mono);font-size:8px;color:var(--gold);margin-top:5px;border-top:1px solid rgba(255,215,0,0.12);padding-top:5px;}
+
+/* TAGS */
+.gender-tag{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:1px;}
+.m-tag{background:rgba(96,165,250,0.15);color:#60A5FA;}
+.f-tag{background:rgba(255,79,123,0.12);color:var(--rose);}
+.o-tag{background:rgba(168,85,247,0.12);color:var(--purple);}
+.std-tag{font-family:var(--mono);font-size:9px;padding:2px 5px;border-radius:1px;}
+.pri-tag{background:rgba(52,211,153,0.12);color:var(--green);}
+.mid-tag{background:rgba(245,158,11,0.12);color:var(--amber);}
+.sec-tag{background:rgba(168,85,247,0.12);color:var(--purple);}
+
+/* STD BARS */
+.std-row{display:grid;grid-template-columns:120px 1fr 1fr 70px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,215,0,0.05);}
+.std-row:last-child{border-bottom:none;}
+.std-label{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;}
+.std-bar-wrap{height:18px;background:var(--bg4);border-radius:1px;overflow:hidden;}
+.std-bar{height:100%;border-radius:1px;display:flex;align-items:center;padding-left:6px;}
+.std-bar-label{font-family:var(--mono);font-size:9px;font-weight:700;}
+.std-val{font-family:var(--mono);font-size:11px;text-align:right;}
+
+/* HEATMAP */
+.heatmap-cell{border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;cursor:pointer;transition:transform .15s;position:relative;}
+.heatmap-cell:hover{transform:scale(1.06);z-index:5;}
+
+/* LEADERBOARD */
+.lb-table{width:100%;border-collapse:collapse;}
+.lb-table th{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;border-bottom:1px solid var(--border);padding:8px 10px;text-align:left;white-space:nowrap;}
+.lb-table td{font-family:var(--sans);font-size:13px;padding:8px 10px;border-bottom:1px solid rgba(255,215,0,0.04);}
+.lb-table tr:last-child td{border-bottom:none;}
+.lb-table tr:hover td{background:rgba(255,215,0,0.03);}
+.rank-badge{font-family:var(--mono);font-size:11px;font-weight:700;width:22px;height:22px;border-radius:2px;display:inline-flex;align-items:center;justify-content:center;}
+.rank-1{background:rgba(255,215,0,0.15);color:var(--gold);}
+.rank-2{background:rgba(0,229,200,0.12);color:var(--teal);}
+.rank-3{background:rgba(192,192,192,0.12);color:#C0C0C0;}
+.rank-n{background:rgba(136,136,168,0.08);color:var(--text-dim);}
+.score-bar-wrap{display:flex;align-items:center;gap:7px;}
+.score-bar-bg{flex:1;height:5px;background:var(--bg4);border-radius:1px;}
+.score-bar-fill{height:5px;border-radius:1px;}
+
+.trend-locked{font-family:var(--mono);font-size:9px;background:rgba(0,229,200,0.1);color:var(--teal);border:1px solid var(--border-teal);padding:3px 8px;border-radius:1px;letter-spacing:1px;}
+.chart-wrap{position:relative;width:100%;}
+.overflow-scroll{overflow-x:auto;}
+.legend-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+.legend-dot{width:10px;height:10px;border-radius:1px;opacity:.85;flex-shrink:0;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--gold-dark);border-radius:2px;}
+</style>
+</head>
+<body>
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">SOS Performance Dashboard</div>
+    <div class="header-sub" id="dashboardSubtext">School of Scholars · Academic Years 2023 – 2025</div>
+  </div>
+  <div class="header-right">
+    <div class="header-badge" id="liveFilterBadge">ALL FILTERS ACTIVE</div>
+    <div class="header-badge" style="color:var(--rose);border-color:var(--border-rose);" id="recordBadge">— RECORDS</div>
+  </div>
+</div>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="switchTab('overview')">Overview</div>
+  <div class="nav-tab" onclick="switchTab('rankings')">School Rankings</div>
+  <div class="nav-tab" onclick="switchTab('toppers')">Individual Toppers</div>
+  <div class="nav-tab" onclick="switchTab('demographics')">Demographics</div>
+  <div class="nav-tab" onclick="switchTab('leaderboard')">Leaderboard</div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="filter-group">
+    <label>Year</label>
+    <select id="yearFilter" onchange="applyFilters()">
+      <option value="ALL">All Years</option>
+      <option value="2023">2023</option>
+      <option value="2024">2024</option>
+      <option value="2025">2025</option>
+    </select>
+  </div>
+  <span class="filter-sep">|</span>
+  <div class="filter-group">
+    <label>School</label>
+    <select id="schoolFilter" onchange="applyFilters()">
+      <option value="ALL">All Schools</option>
+    </select>
+  </div>
+  <span class="filter-sep">|</span>
+  <div class="filter-group">
+    <label>Gender</label>
+    <select id="genderFilter" onchange="applyFilters()">
+      <option value="ALL">All Genders</option>
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+      <option value="unknown">Unknown</option>
+    </select>
+  </div>
+  <span class="filter-sep">|</span>
+  <div class="filter-group">
+    <label>Standard</label>
+    <select id="standardFilter" onchange="applyFilters()">
+      <option value="ALL">All Standards</option>
+      <option value="Primary">Primary (3–5)</option>
+      <option value="Middle">Middle (6–8)</option>
+      <option value="Secondary">Secondary (9–12)</option>
+    </select>
+  </div>
+  <span id="filterSummary"></span>
+</div>
+
+<!-- ===== OVERVIEW PAGE ===== -->
+<div id="page-overview" class="page active">
+<div class="container">
+  <div class="row-4">
+    <div class="kpi-card gold"><div class="kpi-label">Avg Score</div><div class="kpi-value" id="kpi-avg">—</div><div class="kpi-delta" id="kpi-avg-d"></div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Top Score</div><div class="kpi-value" id="kpi-top">—</div><div class="kpi-delta neutral">All-time best</div></div>
+    <div class="kpi-card rose"><div class="kpi-label">Students</div><div class="kpi-value" id="kpi-count">—</div><div class="kpi-delta" id="kpi-count-d"></div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Schools</div><div class="kpi-value" id="kpi-schools">—</div><div class="kpi-delta neutral">In selection</div></div>
+  </div>
+  <div class="row-4">
+    <div class="kpi-card amber"><div class="kpi-label">Pass Rate</div><div class="kpi-value" id="kpi-pass">—</div><div class="kpi-delta" id="kpi-pass-d"></div></div>
+    <div class="kpi-card green"><div class="kpi-label">Top Achievers</div><div class="kpi-value" id="kpi-top-ach">—</div><div class="kpi-delta neutral">First in School &amp; above</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Best Global Rank</div><div class="kpi-value" id="kpi-grank">—</div><div class="kpi-delta neutral" id="kpi-grank-d"></div></div>
+    <div class="kpi-card gold"><div class="kpi-label">Median Score</div><div class="kpi-value" id="kpi-median">—</div><div class="kpi-delta neutral">50th percentile</div></div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Top 3 School Podium</span><span class="card-badge">AVG SCORE RANKING</span></div>
+      <div class="card-body"><div class="podium-wrap" id="podiumWrap"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Multi-Metric Bar Chart</span><span class="card-badge">TOP SCHOOLS</span></div>
+      <div class="card-body">
+        <div class="legend-row" id="barLegend"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Score Distribution</span><span class="card-badge">HISTOGRAM</span></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:240px"><canvas id="histChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Year-on-Year Trend</span><span class="trend-locked">ALWAYS FULL RANGE</span></div>
+      <div class="card-body">
+        <div class="legend-row" id="trendLegend"></div>
+        <div class="chart-wrap" style="height:230px"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== RANKINGS PAGE ===== -->
+<div id="page-rankings" class="page">
+<div class="container">
+  <div class="row-1">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">School Rankings</span>
+        <span class="card-badge">AVG · MEDIAN · TOP SCORE · PASS % · ACHIEVERS</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;">
+          <div style="background:var(--bg4);border:1px solid var(--border);padding:12px;border-radius:2px;">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--gold);letter-spacing:2px;margin-bottom:5px;">AVG SCORE</div>
+            <div style="font-size:13px;color:var(--text-dim);">Mean score across all students — reflects overall academic performance level of the school.</div>
+          </div>
+          <div style="background:var(--bg4);border:1px solid var(--border);padding:12px;border-radius:2px;">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--teal);letter-spacing:2px;margin-bottom:5px;">PASS RATE</div>
+            <div style="font-size:13px;color:var(--text-dim);">Percentage of students scoring ≥40. Measures baseline competency across the school.</div>
+          </div>
+          <div style="background:var(--bg4);border:1px solid var(--border);padding:12px;border-radius:2px;">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--rose);letter-spacing:2px;margin-bottom:5px;">TOP ACHIEVERS</div>
+            <div style="font-size:13px;color:var(--text-dim);">Students earning First in School, Runner-Up, or higher national/state recognition.</div>
+          </div>
+        </div>
+        <div id="rankingsTable"></div>
+      </div>
+    </div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Schools — Score Comparison</span><span class="card-badge">AVG vs MEDIAN vs TOP</span></div>
+      <div class="card-body">
+        <div class="legend-row" id="top3BarLegend"></div>
+        <div class="chart-wrap" style="height:280px"><canvas id="top3BarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">School Profile Radar</span><span class="card-badge">TOP 5 SCHOOLS</span></div>
+      <div class="card-body">
+        <div class="legend-row" id="radarLegend"></div>
+        <div class="chart-wrap" style="height:280px"><canvas id="radarChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== TOPPERS PAGE ===== -->
+<div id="page-toppers" class="page">
+<div class="container">
+  <div class="row-1">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Top Scorer per School</span><span class="card-badge" id="topper-badge">ALL SCHOOLS · ALL YEARS</span></div>
+      <div class="card-body"><div class="topper-grid" id="topperGrid"></div></div>
+    </div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Per-School Highest Score</span><span class="card-badge">TOP MARKS COMPARISON</span></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:320px"><canvas id="topperBarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Topper Gender &amp; Standard Split</span><span class="card-badge">DISTRIBUTION</span></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center;">
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:10px;">GENDER SPLIT</div>
+            <div class="chart-wrap" style="height:160px"><canvas id="topperPieChart"></canvas></div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-bottom:10px;">STANDARD SPLIT</div>
+            <div class="chart-wrap" style="height:160px"><canvas id="topperStdChart"></canvas></div>
+          </div>
+        </div>
+        <div id="topperPieLegend" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== DEMOGRAPHICS PAGE ===== -->
+<div id="page-demographics" class="page">
+<div class="container">
+  <div class="row-3">
+    <div class="kpi-card teal"><div class="kpi-label">Primary Avg Score</div><div class="kpi-value" id="d-kpi-pri">—</div><div class="kpi-delta neutral">Standards 3–5</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Middle Avg Score</div><div class="kpi-value" id="d-kpi-mid">—</div><div class="kpi-delta neutral">Standards 6–8</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Secondary Avg Score</div><div class="kpi-value" id="d-kpi-sec">—</div><div class="kpi-delta neutral">Standards 9–12</div></div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Standard-Based Analysis</span><span class="card-badge">AVG SCORE · PASS RATE · BEST</span></div>
+      <div class="card-body">
+        <div class="section-divider">Primary · Middle · Secondary</div>
+        <div id="standardAnalysis"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Student Distribution</span><span class="card-badge">BY STANDARD GROUP</span></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:240px"><canvas id="ageDistChart"></canvas></div>
+        <div id="ageDistLegend" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Gender Performance by School</span><span class="card-badge">AVG SCORE BY GENDER</span></div>
+      <div class="card-body">
+        <div class="legend-row" id="genderBarLegend"></div>
+        <div class="chart-wrap" style="height:230px"><canvas id="genderBarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Gender Enrollment Split</span><span class="card-badge">OVERALL DISTRIBUTION</span></div>
+      <div class="card-body">
+        <div class="chart-wrap" style="height:200px"><canvas id="genderPieChart"></canvas></div>
+        <div id="genderPieLegend" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;justify-content:center;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="row-1">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Score Heatmap</span><span class="card-badge">SCHOOL × STANDARD GROUP</span></div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Average score per school per standard group. Warmer colour = higher score. Hover a cell for exact values.</div>
+        <div id="heatmapWrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===== LEADERBOARD PAGE ===== -->
+<div id="page-leaderboard" class="page">
+<div class="container">
+  <div class="row-1">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Full Leaderboard</span><span class="card-badge" id="lb-badge">TOP 50 BY SCORE</span></div>
+      <div class="card-body overflow-scroll">
+        <table class="lb-table">
+          <thead><tr>
+            <th>#</th><th>Name</th><th>School</th><th>Std</th><th>Year</th><th>Gender</th>
+            <th>Score</th><th>Global Rank</th><th>School Rank</th><th>Pass/Fail</th><th>Achievement</th><th>Performance</th>
+          </tr></thead>
+          <tbody id="lbBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+// ============================================================
+//  DATA  (28,656 real student records · 14 schools · 2023-2025)
+// ============================================================
+const _P = {"s":["Mahatma Gandhi Wanadongri","SOS Amravati","SOS Atrey Layout Nagpur","SOS Beltarodi Nagpur","SOS Birla Colony Akola","SOS Dhamangaon","SOS Hinganghat","SOS Hudkeshwar","SOS KK","SOS Kaulkhed Akola","SOS Wanadongri Nagpur","SOS Wardha","SOS Warud","SOS Yavatmal"],"d":[["Advika Deore",1,0,1,0,3,43,5972,131,1,"","Amravati"],["Anaya Khan",1,0,1,0,3,34,7045,194,0,"","Amravati"],["Anvi Panchbhai",1,0,1,0,3,22,8831,313,0,"","Amravati"],["Ashlesha Deotare",1,0,1,0,3,17,9198,336,0,"","Amravati"],["Divya Mukhare",1,0,1,0,3,6,9621,381,0,"","Amravati"],["Divyanka Amale",1,0,1,0,3,28,8099,262,0,"","Amravati"],["Ishwari Mudgale",1,0,1,0,3,17,9198,336,0,"","Amravati"],["Ovi Hirulkar",1,0,1,0,3,30,7667,227,0,"","Amravati"],["Rajsi Patil",1,0,1,0,3,6,9621,381,0,"","Amravati"],["Riddhi Dhande",1,0,1,0,3,42,6046,136,1,"","Amravati"],["Samruddhi Raut",1,0,1,0,3,30,7667,227,0,"","Amravati"],["Sanskruti Jaiswal",1,0,1,0,3,26,8548,289,0,"","Amravati"],["Shrinidhi Pinjarkar",1,0,1,0,3,42,6046,136,1,"","Amravati"],["Shubada Nikam",1,0,1,0,3,28,8099,262,0,"","Amravati"],["Swara Deshmukh",1,0,1,0,3,36,6811,176,0,"","Amravati"],["Swara Thakare",1,0,1,0,3,30,7667,227,0,"","Amravati"],["Advait Bhopale",1,0,0,0,3,29,7972,248,0,"","Amravati"],["Agastya Durne",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Ansh Rithe",1,0,0,0,3,0,9741,394,0,"","Amravati"],["Arnav Raut",1,0,0,0,3,18,9107,327,0,"","Amravati"],["Atharve Tayade",1,0,0,0,3,29,7972,248,0,"","Amravati"],["Bhargav Patki",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Hruday Jambhole",1,0,0,0,3,39,6301,155,0,"","Amravati"],["Krushnad Rahate",1,0,0,0,3,29,7972,248,0,"","Amravati"],["Kushal Rathod",1,0,0,0,3,39,6301,155,0,"","Amravati"],["Mohd Saaqib Sajid",1,0,0,0,3,16,9344,354,0,"","Amravati"],["Ritwik Bijwe",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Samarth Raut",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Shashwat Sable",1,0,0,0,3,44,5709,117,1,"","Amravati"],["Sparsh Lende",1,0,0,0,3,38,6610,168,0,"","Amravati"],["Utkersh Wakode",1,0,0,0,3,17,9198,336,0,"","Amravati"],["Vivek Jawale",1,0,0,0,3,28,8099,262,0,"","Amravati"],["Aaryan Lonare",1,0,0,0,3,71,2601,19,1,"","Amravati"],["Aaradhya Hirade",1,0,1,0,3,33,7298,209,0,"","Amravati"],["Aashvi Jayade",1,0,1,0,3,58,3910,41,1,"","Amravati"],["Angel Rangari",1,0,1,0,3,6,9621,381,0,"","Amravati"],["Chinmai Bhuyar",1,0,1,0,3,56,3980,44,1,"","Amravati"],["Himanshi Jivtani",1,0,1,0,3,30,7667,227,0,"","Amravati"],["Kishori Kale",1,0,1,0,3,36,6811,176,0,"","Amravati"],["Kritika Solanke",1,0,1,0,3,30,7667,227,0,"","Amravati"],["Narayani Deshpande",1,0,1,0,3,27,8436,283,0,"","Amravati"],["Neeraja Deshpande",1,0,1,0,3,83,1510,10,1,"","Amravati"],["Purvi Joshi",1,0,1,0,3,0,9741,394,0,"","Amravati"],["Sharayu Chamlate",1,0,1,0,3,23,8665,299,0,"","Amravati"],["Tanushree Rathod",1,0,1,0,3,40,6166,146,1,"","Amravati"],["Tanvi Meshram",1,0,1,0,3,30,7667,227,0,"","Amravati"],["Aayush Holey",1,0,0,0,3,22,8831,313,0,"","Amravati"],["Abhi Umekar",1,0,0,0,3,27,8436,283,0,"","Amravati"],["Abhinav Gaigole",1,0,0,0,3,45,5408,104,1,"","Amravati"],["Aditya Ahirwar",1,0,0,0,3,52,4620,62,1,"","Amravati"],["Advait Rao",1,0,0,0,3,6,9621,381,0,"","Amravati"],["Alop Patharkar",1,0,0,0,3,49,5038,81,1,"","Amravati"],["Avneesh Ukey",1,0,0,0,3,45,5408,104,1,"","Amravati"],["Devansh Waoo",1,0,0,0,3,61,3448,33,1,"","Amravati"],["Devanshu Bhure",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Harshak Godbole",1,0,0,0,3,56,3980,44,1,"","Amravati"],["Nakshatra Varma",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Naman Rathod",1,0,0,0,3,31,7644,225,0,"","Amravati"],["Nimit Bhati",1,0,0,0,3,6,9621,381,0,"","Amravati"],["Shashwat Sonewane",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Shravan Jaiswal",1,0,0,0,3,88,1211,4,1,"","Amravati"],["Siddharth Bhagat",1,0,0,0,3,6,9621,381,0,"","Amravati"],["Sparsh Deshmukh",1,0,0,0,3,86,1456,9,1,"","Amravati"],["Veer Hatnapure",1,0,0,0,3,25,8591,295,0,"","Amravati"],["Vinit Joshi",1,0,0,0,3,22,8831,313,0,"","Amravati"],["Anaya Mangulkar",1,0,1,0,3,49,5038,81,1,"","Amravati"],["Antara Khobragade",1,0,1,0,3,22,8831,313,0,"","Amravati"],["Arnavi Prajapati",1,0,1,0,3,42,6046,136,1,"","Amravati"],["Dhnyanada Chaudhari",1,0,1,0,3,26,8548,289,0,"","Amravati"],["Kavya Kadu",1,0,1,0,3,55,4232,50,1,"","Amravati"],["Pranjal Saygunde",1,0,1,0,3,54,4506,56,1,"","Amravati"],["Prayukta Patil",1,0,1,0,3,17,9198,336,0,"","Amravati"],["Prisha Agiwal",1,0,1,0,3,17,9198,336,0,"","Amravati"],["Riddhima Shinde",1,0,1,0,3,34,7045,194,0,"","Amravati"],["Sanvi Awalinkar",1,0,1,0,3,32,7571,219,0,"","Amravati"],["Shalin Naik",1,0,1,0,3,26,8548,289,0,"","Amravati"],["Swaradhya Pawar",1,0,1,0,3,22,8831,313,0,"","Amravati"],["Ameya Kulkarni",1,0,0,0,3,23,8665,299,0,"","Amravati"],["Arnav Hajare",1,0,0,0,3,26,8548,289,0,"","Amravati"],["Ayush Pakhan",1,0,0,0,3,49,5038,81,1,"","Amravati"],["Jaydip Navalkar",1,0,0,0,3,46,5333,100,1,"","Amravati"],["Naipunya Mahure",1,0,0,0,3,41,6136,143,1,"","Amravati"],["Navinya Ingale",1,0,0,0,3,6,9621,381,0,"","Amravati"],["Prasanna Thakare",1,0,0,0,3,22,8831,313,0,"","Amravati"],["Ram Chavhan",1,0,0,0,3,12,9440,363,0,"","Amravati"],["Rudra Kohale",1,0,0,0,3,12,9440,363,0,"","Amravati"],["Sadim Khan",1,0,0,0,3,29,7972,248,0,"","Amravati"],["Tanishk Dhone",1,0,0,0,3,18,9107,327,0,"","Amravati"],["Utkarsh Ingole",1,0,0,0,3,28,8099,262,0,"","Amravati"],["Vinit Deshmukh",1,0,0,0,3,11,9552,374,0,"","Amravati"],["Viraj Nanote",1,0,0,0,3,11,9552,374,0,"","Amravati"],["Aaradhya Kapile",1,0,1,0,3,43,5972,131,1,"","Amravati"],["Aarohi Ramteke",1,0,1,0,3,38,6610,168,0,"","Amravati"],["Abhiniti Takpire",1,0,1,0,3,50,4783,70,1,"","Amravati"],["Anika Kesharwani",1,0,1,0,3,32,7571,219,0,"","Amravati"],["Anshuja Sarkate",1,0,1,0,3,22,8831,313,0,"","Amravati"],["Anushri Turkane",1,0,1,0,3,26,8548,289,0,"","Amravati"],["Harshita Pandey",1,0,1,0,3,62,3329,30,1,"","Amravati"],["Krisha Nahar",1,0,1,0,3,57,3929,43,1,"","Amravati"],["Namrata Awaghad",1,0,1,0,3,17,9198,336,0,"","Amravati"],["Nirbhaya Ubhad",1,0,1,0,3,24,8608,298,0,"","Amravati"],["Priyal Kannake",1,0,1,0,3,12,9440,363,0,"","Amravati"],["Rajvi Patil",1,0,1,0,3,12,9440,363,0,"","Amravati"],["Sanvi Bijwe",1,0,1,0,3,26,8548,289,0,"","Amravati"],["Siddhi Kharapkar",1,0,1,0,3,44,5709,117,1,"","Amravati"],["Swanandi Kathe",1,0,1,0,3,38,6610,168,0,"","Amravati"],["Aarav Shivankar",1,0,0,0,3,65,3222,26,1,"","Amravati"],["Ajinkya Pawar",1,0,0,0,3,23,8665,299,0,"","Amravati"],["Avaneesh Londe",1,0,0,0,3,29,7972,248,0,"","Amravati"],["Chintan Deshmukh",1,0,0,0,3,40,6166,146,1,"","Amravati"],["Harshnil Dhage",1,0,0,0,3,11,9552,374,0,"","Amravati"],["Kushal Charpe",1,0,0,0,3,17,9198,336,0,"","Amravati"],["Madhur Gharde",1,0,0,0,3,35,6967,187,0,"","Amravati"],["Mohd. Aqdas Khan",1,0,0,0,3,23,8665,299,0,"","Amravati"],["Naksh Dhalwani",1,0,0,0,3,23,8665,299,0,"","Amravati"],["Rachit Shrirao",1,0,0,0,3,17,9198,336,0,"","Amravati"],["Raghav Patel",1,0,0,0,3,60,3709,37,1,"","Amravati"],["Raghav Parwani",1,0,0,0,3,16,9344,354,0,"","Amravati"],["Rishit Patil",1,0,0,0,3,12,9440,363,0,"","Amravati"],["Swarnim Band",1,0,0,0,3,37,6772,175,0,"","Amravati"],["Tanay Dhawale",1,0,0,0,3,11,9552,374,0,"","Amravati"],["Utkarsh Patil",1,0,0,0,3,18,9107,327,0,"","Amravati"],["Vivan Chatur",1,0,0,0,3,22,8831,313,0,"","Amravati"],["Yug Rochlani",1,0,0,0,3,28,8099,262,0,"","Amravati"],["Akshara Manwar",1,0,1,0,3,46,5333,100,1,"","Amravati"],["Ishwari Pawar",1,0,1,0,3,52,4620,62,1,"","Amravati"],["Krushnali Rohankar",1,0,1,0,3,30,7667,227,0,"","Amravati"],["Niharika Mahajan",1,0,1,0,3,49,5038,81,1,"","Amravati"],["Nilashri Nistane",1,0,1,0,3,44,5709,117,1,"","Amravati"],["Pranavi Jagtap",1,0,1,0,3,36,6811,176,0,"","Amravati"],["Saumayee Ingle",1,0,1,0,3,47,5297,97,1,"","Amravati"],["Shreeja Sahu",1,0,1,0,3,28,8099,262,0,"","Amravati"],["Shrisha Metkar",1,0,1,0,3,42,6046,136,1,"","Amravati"],["Swanandi Lakde",1,0,1,0,3,25,8591,295,0,"","Amravati"],["Aaradhya Dhote",1,0,1,0,3,40,6166,146,1,"","Amravati"],["Aarav Pundage",1,0,1,0,3,22,8831,313,0,"","Amravati"],["Advik Manke",1,0,0,0,3,36,6811,176,0,"","Amravati"],["Anay Lohakare",1,0,0,0,3,11,9552,374,0,"","Amravati"],["Animesh Awaghad",1,0,0,0,3,22,8831,313,0,"","Amravati"],["Ansh Munde",1,0,0,0,3,16,9344,354,0,"","Amravati"],["Anshuman Shinde",1,0,0,0,3,16,957,8,0,"","Amravati"],["Atharv Jamnekar",1,0,0,0,3,49,5038,81,1,"","Amravati"],["Hardik Verma",1,0,0,0,3,22,8831,313,0,"","Amravati"],["Ojas Chikhale",1,0,0,0,3,0,9741,394,0,"","Amravati"],["Raman Chaube",1,0,0,0,3,42,6046,136,1,"","Amravati"],["Revansh Thakare",1,0,0,0,3,21,9068,326,0,"","Amravati"],["Shobhit Bhagat",1,0,0,0,3,54,4506,56,1,"","Amravati"],["Shree Pinjarkar",1,0,0,0,3,35,6967,187,0,"","Amravati"],["Swaraj Umbarkar",1,0,0,0,3,68,2771,20,1,"","Amravati"],["Vedant Kshirsagar",1,0,0,0,3,6,252,9,0,"","Amravati"],["Vihang Kanade",1,0,0,0,3,54,4506,56,1,"","Amravati"],["Yadnya Shahane",1,0,0,0,3,64,3299,28,1,"","Amravati"],["Yash Giratkar",1,0,0,0,3,75,27,1,1,"First in School","Amravati"],["Ananya Rajput",1,0,1,0,3,39,6301,155,0,"","Amravati"],["Ananya Bhonge",1,0,1,0,3,12,9440,363,0,"","Amravati"],["Ananya Chaudhari",1,0,1,0,3,23,8665,299,0,"","Amravati"],["Ishika Akhre",1,0,1,0,3,36,6811,176,0,"","Amravati"],["Ishwari Panzade",1,0,1,0,3,39,6301,155,0,"","Amravati"],["Kritika Dhankani",1,0,1,0,3,39,6301,155,0,"","Amravati"],["Manasvi Kadu",1,0,1,0,3,0,9741,394,0,"","Amravati"],["Ojasvi Bansod",1,0,1,0,3,0,9741,394,0,"","Amravati"],["Ovi Kathe",1,0,1,0,3,88,1211,4,1,"","Amravati"],["Sanjana Gujare",1,0,1,0,3,35,6967,187,0,"","Amravati"],["Sarakshi Alone",1,0,1,0,3,28,8099,262,0,"","Amravati"],["Savi Burkhande",1,0,1,0,3,72,2314,14,1,"","Amravati"],["Swarangi Nakashe",1,0,1,0,3,14,9416,361,0,"","Amravati"],["Yukti Parise",1,0,1,0,3,34,7045,194,0,"","Amravati"],["Anish Jakate",1,0,0,0,3,56,3980,44,1,"","Amravati"],["Ayansh Naranje",1,0,0,0,3,38,6610,168,0,"","Amravati"],["Ayush Navhale",1,0,0,0,3,28,8099,262,0,"","Amravati"],["Diyan Chavhan",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Krishna Hemrajani",1,0,0,0,3,14,9416,361,0,"","Amravati"],["Mithilesh Bhonde",1,0,0,0,3,36,6811,176,0,"","Amravati"],["Raghav Malani",1,0,0,0,3,27,8436,283,0,"","Amravati"],["Reyaansh Raut",1,0,0,0,3,6,9621,381,0,"","Amravati"],["Sanjyot Bawane",1,0,0,0,3,0,9741,394,0,"","Amravati"],["Satvik Tardeja",1,0,0,0,3,44,5709,117,1,"","Amravati"],["Satwik Ugle",1,0,0,0,3,30,147,5,0,"","Amravati"],["Shardul Bhamburkar",1,0,0,0,3,38,6610,168,0,"","Amravati"],["Shravan Aher",1,0,0,0,3,11,9552,374,0,"","Amravati"],["Swarup Walke",1,0,0,0,3,48,5236,92,1,"","Amravati"],["Aarohi Vishwakarma",1,0,1,0,3,34,7045,194,0,"","Amravati"],["Aditi Khade",1,0,1,0,3,30,792,3,0,"Second Runner-Up in School","Amravati"],["Aditi Raut",1,0,1,0,3,29,7972,248,0,"","Amravati"],["Ananya Rathod",1,0,1,0,3,42,6046,136,1,"","Amravati"],["Anushka Chavhan",1,0,1,0,3,61,3448,33,1,"","Amravati"],["Anushri Lohakare",1,0,1,0,3,34,7045,194,0,"","Amravati"],["Aradhya Kale",1,0,1,0,3,40,6166,146,1,"","Amravati"],["Asmi Thakare",1,0,1,0,3,55,4232,50,1,"","Amravati"],["Avani Bute",1,0,1,0,3,27,213,7,0,"","Amravati"],["Eshita Maske",1,0,1,0,3,40,6166,146,1,"","Amravati"],["Mehera Saudagar",1,0,1,0,3,47,5297,97,1,"","Amravati"],["Mrunmai Pinjarkar",1,0,1,0,3,45,5408,104,1,"","Amravati"],["Niyati Athor",1,0,1,0,3,29,7972,248,0,"","Amravati"],["Pranjal Wakhare",1,0,1,0,3,11,9552,374,0,"","Amravati"],["Roshani Namewar",1,0,1,0,3,28,8099,262,0,"","Amravati"],["Sachi Baberwal",1,0,1,0,3,35,6967,187,0,"","Amravati"],["Swamini Kale",1,0,1,0,3,17,9198,336,0,"","Amravati"],["Yashita Gode",1,0,1,0,3,62,3329,30,1,"","Amravati"],["Aayush Hatwar",1,0,0,0,3,35,6967,187,0,"","Amravati"],["Adavait Gade",1,0,0,0,3,23,8665,299,0,"","Amravati"],["Adhish Lomate",1,0,0,0,3,56,56,2,1,"First Runner-Up in School","Amravati"],["Akshaydeep Gajbhiye",1,0,0,0,3,51,4659,64,1,"","Amravati"],["Arnav Patil",1,0,0,0,3,67,2804,21,1,"","Amravati"],["Arnav Wankhade",1,0,0,0,3,29,7972,248,0,"","Amravati"],["Krushna Tembhare",1,0,0,0,3,33,7298,209,0,"","Amravati"],["Medhansh Fadanvis",1,0,0,0,3,22,915,7,0,"","Amravati"],["Neel Vinchurkar",1,0,0,0,3,51,4659,64,1,"","Amravati"],["Prince Dhandar",1,0,0,0,3,6,9621,381,0,"","Amravati"],["Samraat Vaidya",1,0,0,0,3,44,5709,117,1,"","Amravati"],["Sarthak Bhadange",1,0,0,0,3,48,620,1,1,"First in School","Amravati"],["Shaurya Tidke",1,0,0,0,3,12,246,8,0,"","Amravati"],["Shridhan Pohankar",1,0,0,0,3,44,5709,117,1,"","Amravati"],["Shriman Lende",1,0,0,0,3,45,91,4,1,"","Amravati"],["Swaraj Lande",1,0,0,0,3,51,4659,64,1,"","Amravati"],["Tanishq Deshmukh",1,0,0,0,3,36,6811,176,0,"","Amravati"],["Virant Patond",1,0,0,0,3,30,7667,227,0,"","Amravati"],["Aarohi Ridge",1,0,1,0,4,35,6967,187,0,"","Amravati"],["Adwika Ade",1,0,1,0,4,49,5038,81,1,"","Amravati"],["Anushka Yadav",1,0,1,0,4,34,7045,194,0,"","Amravati"],["Aaradhya Kathole",1,0,1,0,4,28,8099,262,0,"","Amravati"],["Diya Rathi",1,0,1,0,4,39,6301,155,0,"","Amravati"],["Grishma Chavan",1,0,1,0,4,28,8099,262,0,"","Amravati"],["Kanika Punkar",1,0,1,0,4,33,7298,209,0,"","Amravati"],["Khushi Agrawal",1,0,1,0,4,51,4659,64,1,"","Amravati"],["Manjiri Warkad",1,0,1,0,4,17,9198,336,0,"","Amravati"],["Nirmayi Bopshetti",1,0,1,0,4,33,7298,209,0,"","Amravati"],["Swaradhya Kharad",1,0,1,0,4,55,4232,50,1,"","Amravati"],["Gauri Chede",1,0,1,0,4,72,2314,14,1,"","Amravati"],["Vidisha Kadu",1,0,1,0,4,23,8665,299,0,"","Amravati"],["Anvi Bijwe",1,0,1,0,4,33,7298,209,0,"","Amravati"],["Aaradhya Raut",1,0,0,0,4,54,4506,56,1,"","Amravati"],["Arayu Vishwakarma",1,0,0,0,4,72,2314,14,1,"","Amravati"],["Advay Pande",1,0,0,0,4,77,1971,12,1,"","Amravati"],["Anshuman Thakur",1,0,0,0,4,54,4506,56,1,"","Amravati"],["Bhavya Dhamecha",1,0,0,0,4,29,7972,248,0,"","Amravati"],["Devang Gundaiyya",1,0,0,0,4,50,4783,70,1,"","Amravati"],["Devansh Pandhare",1,0,0,0,4,34,7045,194,0,"","Amravati"],["Kartik Akarte",1,0,0,0,4,44,5709,117,1,"","Amravati"],["Kaustubh Gaikwad",1,0,0,0,4,17,9198,336,0,"","Amravati"],["Malhar Kadam",1,0,0,0,4,28,8099,262,0,"","Amravati"],["Naksh Rajgure",1,0,0,0,4,36,6811,176,0,"","Amravati"],["Om Kalane",1,0,0,0,4,49,5038,81,1,"","Amravati"],["Reyaansh Sune",1,0,0,0,4,45,5408,104,1,"","Amravati"],["Sarthak Fance",1,0,0,0,4,50,4783,70,1,"","Amravati"],["Tanay Mehetre",1,0,0,0,4,22,8831,313,0,"","Amravati"],["Tavish Wasnik",1,0,0,0,4,49,5038,81,1,"","Amravati"],["Vivan Joshi",1,0,0,0,4,44,5709,117,1,"","Amravati"],["Anandi Dudhe",1,0,1,0,4,51,4659,64,1,"","Amravati"],["Hindavi Ghadge",1,0,1,0,4,40,6166,146,1,"","Amravati"],["Ishta Kapase",1,0,1,0,4,50,4783,70,1,"","Amravati"],["Ishwari Kshirsagar",1,0,1,0,4,88,1211,4,1,"","Amravati"],["Kadambari Kadu",1,0,1,0,4,48,5236,92,1,"","Amravati"],["Ramai Vyawahare",1,0,1,0,4,32,7571,219,0,"","Amravati"],["Rudrani Kshirsagar",1,0,1,0,4,67,2804,21,1,"","Amravati"],["Shubhra Shegokar",1,0,1,0,4,34,7045,194,0,"","Amravati"],["Spruha Mankar",1,0,1,0,4,50,4783,70,1,"","Amravati"],["Aaradhya Taley",1,0,2,0,4,42,6046,136,1,"","Amravati"],["Aaryan Wakpanjar",1,0,0,0,4,45,5408,104,1,"","Amravati"],["Anagh Thakare",1,0,0,0,4,56,3980,44,1,"","Amravati"],["Aradhya Thakare",1,0,0,0,4,28,8099,262,0,"","Amravati"],["Arnav Tolmare",1,0,0,0,4,49,81,3,1,"Second Runner-Up in School","Amravati"],["Chaitanya Raut",1,0,0,0,4,33,7298,209,0,"","Amravati"],["Kartik Panjabi",1,0,0,0,4,50,4783,70,1,"","Amravati"],["Naman Lad",1,0,0,0,4,28,8099,262,0,"","Amravati"],["Nandish Pawar",1,0,0,0,4,23,8665,299,0,"","Amravati"],["Prasham Kothari",1,0,0,0,4,6,9621,381,0,"","Amravati"],["Sarvesh Tiwari",1,0,0,0,4,56,3980,44,1,"","Amravati"],["Suryansh Kalaskar",1,0,0,0,4,62,3329,30,1,"","Amravati"],["Unais Khan",1,0,0,0,4,45,5408,104,1,"","Amravati"],["Advika Khanzode",1,0,1,0,4,47,5297,97,1,"","Amravati"],["Ananya Nagwani",1,0,1,0,4,51,4659,64,1,"","Amravati"],["Arya Pund",1,0,1,0,4,50,4783,70,1,"","Amravati"],["Darshana Bawane",1,0,1,0,4,40,6166,146,1,"","Amravati"],["Dhruvi Kalaskar",1,0,1,0,4,34,7045,194,0,"","Amravati"],["Kanak Rathi",1,0,1,0,4,18,9107,327,0,"","Amravati"],["Kimaya Sarkate",1,0,1,0,4,43,5972,131,1,"","Amravati"],["Narayani Turanker",1,0,1,0,4,44,5709,117,1,"","Amravati"],["Ojasvi Pandit",1,0,1,0,4,94,874,3,1,"Second Runner-Up in School","Amravati"],["Peehu Munde",1,0,1,0,4,55,4232,50,1,"","Amravati"],["Piyusha Bode",1,0,1,0,4,17,9198,336,0,"","Amravati"],["Prapti Upadhyay",1,0,1,0,4,30,7667,227,0,"","Amravati"],["Reva Wankhade",1,0,1,0,4,49,5038,81,1,"","Amravati"],["Riddhi Bangar",1,0,1,0,4,30,792,3,0,"Second Runner-Up in School","Amravati"],["Riya Pisole",1,0,1,0,4,12,9440,363,0,"","Amravati"],["Shreya Ladole",1,0,1,0,4,39,6301,155,0,"","Amravati"],["Soumya Deshmukh",1,0,1,0,4,12,9440,363,0,"","Amravati"],["Swaranjali Gulhane",1,0,1,0,4,33,7298,209,0,"","Amravati"],["Trupti Rajani",1,0,1,0,4,17,9198,336,0,"","Amravati"],["Tulsi Ghodki",1,0,1,0,4,18,9107,327,0,"","Amravati"],["Yashasvi Kshirsagar",1,0,1,0,4,54,4506,56,1,"","Amravati"],["Aaradhya Nichat",1,0,0,0,4,50,4783,70,1,"","Amravati"],["Abhang Dande",1,0,0,0,4,28,8099,262,0,"","Amravati"],["Amitesh Awaghad",1,0,1,0,4,15,9410,360,0,"","Amravati"],["Anay Pisole",1,0,0,0,4,59,3889,40,1,"","Amravati"],["Anshul Wankhede",1,0,0,0,4,29,7972,248,0,"","Amravati"],["Aryan Wankhade",1,0,0,0,4,45,5408,104,1,"","Amravati"],["Dewansh  . Ikhar",1,0,0,0,4,27,8436,283,0,"","Amravati"],["Himanshu Ghawghawe",1,0,0,0,4,28,8099,262,0,"","Amravati"],["Mohd.Mufaiz . Azhar",1,0,0,0,4,38,6610,168,0,"","Amravati"],["Parth Brahman",1,0,0,0,4,39,6301,155,0,"","Amravati"],["Prasanna Tapare",1,0,0,0,4,83,1510,10,1,"","Amravati"],["Prathamesh Sonune",1,0,0,0,4,16,9344,354,0,"","Amravati"],["Pushkar Rai",1,0,0,0,4,48,5236,92,1,"","Amravati"],["Sai Gorele",1,0,0,0,4,58,3910,41,1,"","Amravati"],["Shivansh Agrawal",1,0,0,0,4,60,3709,37,1,"","Amravati"],["Swaraj Deshmukh",1,0,0,0,4,46,5333,100,1,"","Amravati"],["Varad Meshram",1,0,0,0,4,43,5972,131,1,"","Amravati"],["Aadya Padole",1,0,1,0,4,77,1971,12,1,"","Amravati"],["Dhanashri Gadge",1,0,1,0,4,28,8099,262,0,"","Amravati"],["Drishti Rohada",1,0,1,0,4,45,5408,104,1,"","Amravati"],["Gautami Kaloti",1,0,1,0,4,34,7045,194,0,"","Amravati"],["Gunjan Dhone",1,0,1,0,4,50,4783,70,1,"","Amravati"],["Hrudaya Mudgal",1,0,1,0,4,72,2314,14,1,"","Amravati"],["Kanak Rathi",1,0,1,0,4,34,7045,194,0,"","Amravati"],["Niharika Kadu",1,0,1,0,4,12,9440,363,0,"","Amravati"],["Shubhra Bijwe",1,0,1,0,4,55,4232,50,1,"","Amravati"],["Siddhi Dandge",1,0,1,0,4,45,5408,104,1,"","Amravati"],["Swara Lende",1,0,1,0,4,29,7972,248,0,"","Amravati"],["Spruha Gawai",1,0,1,0,4,39,6301,155,0,"","Amravati"],["Utsavi Padole",1,0,1,0,4,88,1211,4,1,"","Amravati"],["Vaidehi Zalke",1,0,1,0,4,105,508,2,1,"First Runner-Up in School","Amravati"],["Vishakha Wankhade",1,0,1,0,4,39,6301,155,0,"","Amravati"],["Aditya Nirmal",1,0,0,0,4,28,8099,262,0,"","Amravati"],["Arjun Wankhade",1,0,0,0,4,35,6967,187,0,"","Amravati"],["Atharv Badgujar",1,0,0,0,4,16,9344,354,0,"","Amravati"],["Bhraman Shinde",1,0,0,0,4,12,9440,363,0,"","Amravati"],["Devansh Patel",1,0,0,0,4,66,2987,23,1,"","Amravati"],["Devesh Gangwani",1,0,0,0,4,39,6301,155,0,"","Amravati"],["Manan Kenekar",1,0,0,0,4,40,6166,146,1,"","Amravati"],["Nishant Kashyap",1,0,0,0,4,27,8436,283,0,"","Amravati"],["Om Ambadkar",1,0,0,0,4,25,8591,295,0,"","Amravati"],["Prabal Pande",1,0,0,0,4,28,8099,262,0,"","Amravati"],["Purav Gole",1,0,0,0,4,34,7045,194,0,"","Amravati"],["Sarvesh Kadam",1,0,0,0,4,88,1211,4,1,"","Amravati"],["Shaurya Sharma",1,0,0,0,4,22,8831,313,0,"","Amravati"],["Shree Ghode",1,0,0,0,4,50,4783,70,1,"","Amravati"],["Shreyansh Indurkar",1,0,0,0,4,23,8665,299,0,"","Amravati"],["Shreyash Nankar",1,0,0,0,4,45,5408,104,1,"","Amravati"],["Swarup Kharode",1,0,0,0,4,34,7045,194,0,"","Amravati"],["Vibhyanu Gulhane",1,0,0,0,4,44,5709,117,1,"","Amravati"],["Vinay Rathod",1,0,0,0,4,66,2987,23,1,"","Amravati"],["Yuvraj Jaswani",1,0,0,0,4,45,5408,104,1,"","Amravati"],["Jay Gawande",1,0,0,0,4,23,8665,299,0,"","Amravati"],["Aaradhya Upase",1,0,1,0,4,60,3709,37,1,"","Amravati"],["Aaradhya Bhurgate",1,0,1,0,4,30,7667,227,0,"","Amravati"],["Akshada Joshi",1,0,1,0,4,17,9198,336,0,"","Amravati"],["Chaitanya Rokade",1,0,1,0,4,18,9107,327,0,"","Amravati"],["Gitika Varma",1,0,1,0,4,46,5333,100,1,"","Amravati"],["Madhura Kankane",1,0,1,0,4,45,5408,104,1,"","Amravati"],["Purva Malokar",1,0,1,0,4,29,7972,248,0,"","Amravati"],["Ravi Munde",1,0,1,0,4,61,3448,33,1,"","Amravati"],["Sanvi Anasane",1,0,1,0,4,127,170,1,1,"First in School","Amravati"],["Sara Sheje",1,0,1,0,4,12,9440,363,0,"","Amravati"],["Shrinidhi Manke",1,0,1,0,4,48,5236,92,1,"","Amravati"],["Spruha Nage",1,0,1,0,4,16,9344,354,0,"","Amravati"],["Sukhada Karale",1,0,1,0,4,41,6136,143,1,"","Amravati"],["Swara Sawalakhe",1,0,1,0,4,31,7644,225,0,"","Amravati"],["Tanvir Grewal",1,0,1,0,4,18,9107,327,0,"","Amravati"],["Veera Kapse",1,0,1,0,4,65,3222,26,1,"","Amravati"],["Vidhi Raut",1,0,1,0,4,66,2987,23,1,"","Amravati"],["Aditya Bajaj",1,0,0,0,4,50,4783,70,1,"","Amravati"],["Aditya Padole",1,0,0,0,4,44,5709,117,1,"","Amravati"],["Anshuman Pawar",1,0,0,0,4,34,7045,194,0,"","Amravati"],["Deep Ikhar",1,0,0,0,4,29,7972,248,0,"","Amravati"],["Kovidh Makadam",1,0,0,0,4,55,4232,50,1,"","Amravati"],["Parth Thakur",1,0,0,0,4,30,7667,227,0,"","Amravati"],["Praneel Wakode",1,0,0,0,4,56,3980,44,1,"","Amravati"],["Sahas Rajgure",1,0,0,0,4,49,5038,81,1,"","Amravati"],["Samar Chandankar",1,0,0,0,4,72,2314,14,1,"","Amravati"],["Sanskar Pathak",1,0,0,0,4,6,9621,381,0,"","Amravati"],["Shivraj Shelke",1,0,0,0,4,45,5408,104,1,"","Amravati"],["Shree Paliwal",1,0,0,0,4,49,5038,81,1,"","Amravati"],["Smeet Paturde",1,0,0,0,4,33,7298,209,0,"","Amravati"],["Tejas Sanap",1,0,0,0,4,32,7571,219,0,"","Amravati"],["Utkarsh Khande",1,0,0,0,4,33,7298,209,0,"","Amravati"],["Vihan Yadav",1,0,0,0,4,39,6301,155,0,"","Amravati"],["Vrushank Kamble",1,0,0,0,4,40,6166,146,1,"","Amravati"],["Yash Rahulakar",1,0,0,0,4,26,890,6,0,"","Amravati"],["Yuvraj Lasankar",1,0,0,0,4,36,6811,176,0,"","Amravati"],["Aaradhya Chavan",1,0,1,0,4,61,3448,33,1,"","Amravati"],["Janhavi Dhekle",1,0,1,0,4,34,7045,194,0,"","Amravati"],["Krutika Pimpalkar",1,0,1,0,4,28,8099,262,0,"","Amravati"],["Pariniti Madavi",1,0,1,0,4,29,7972,248,0,"","Amravati"],["Purvi Wawge",1,0,1,0,4,17,9198,336,0,"","Amravati"],["Sambodhi Gawai",1,0,1,0,4,39,6301,155,0,"","Amravati"],["Samrudhi Adsod",1,0,1,0,4,63,3313,29,1,"","Amravati"],["Sanavi Behare",1,0,1,0,4,23,8665,299,0,"","Amravati"],["Shravani Gawande",1,0,1,0,4,48,5236,92,1,"","Amravati"],["Shreya Samudre",1,0,1,0,4,6,9621,381,0,"","Amravati"],["Shreya Ugale",1,0,1,0,4,18,9107,327,0,"","Amravati"],["Shruti Lonkar",1,0,1,0,4,23,8665,299,0,"","Amravati"],["Swara Bhimate",1,0,1,0,4,32,7571,219,0,"","Amravati"],["Swara Bonde",1,0,1,0,4,18,9107,327,0,"","Amravati"],["Tanvi Gawande",1,0,1,0,4,28,8099,262,0,"","Amravati"],["Vaishnavi Dighekar",1,0,1,0,4,27,8436,283,0,"","Amravati"],["Aaradhya Gulhane",1,0,0,0,4,30,7667,227,0,"","Amravati"],["Aaradhya Chawhale",1,0,0,0,4,30,792,3,0,"Second Runner-Up in School","Amravati"],["Akshay Hukare",1,0,0,0,4,6,9621,381,0,"","Amravati"],["Aman Khandare",1,0,0,0,4,17,9198,336,0,"","Amravati"],["Anshuman Pusadkar",1,0,0,0,4,43,5972,131,1,"","Amravati"],["Anuj Bhende",1,0,0,0,4,44,5709,117,1,"","Amravati"],["Arnav Bhoyar",1,0,0,0,4,36,6811,176,0,"","Amravati"],["Devansh Borkar",1,0,0,0,4,36,6811,176,0,"","Amravati"],["Mayank Nimbhorkar",1,0,0,0,4,44,5709,117,1,"","Amravati"],["Naman Sharma",1,0,0,0,4,17,9198,336,0,"","Amravati"],["Prathamesh Pethe",1,0,0,0,4,32,7571,219,0,"","Amravati"],["Rutvik Bhadke",1,0,0,0,4,48,620,1,1,"First in School","Amravati"],["Sarthak Pethe",1,0,0,0,4,33,7298,209,0,"","Amravati"],["Soham Kholapure",1,0,0,0,4,17,9198,336,0,"","Amravati"],["Swaraj Dongare",1,0,0,0,4,30,7667,227,0,"","Amravati"],["Vansh Ughade",1,0,0,0,4,44,5709,117,1,"","Amravati"],["Vidit Kamble",1,0,0,0,4,30,147,5,0,"","Amravati"],["Yash Mandavdhare",1,0,0,0,4,23,8665,299,0,"","Amravati"],["Yash Borkar",1,0,0,0,4,41,6136,143,1,"","Amravati"],["Yash Shrikhandkar",1,0,0,0,4,38,6610,168,0,"","Amravati"],["Aaradhya Dhembre",1,0,1,0,5,44,9154,155,1,"","Amravati"],["Anvi Vyas",1,0,1,0,5,38,11238,205,0,"","Amravati"],["Athshree Barde",1,0,1,0,5,23,15567,339,0,"","Amravati"],["Bhagyshree Chaudhari",1,0,1,0,5,12,17421,403,0,"","Amravati"],["Harshika Jangada",1,0,1,0,5,39,10510,186,0,"","Amravati"],["Hitakshee Kharkale",1,0,1,0,5,76,2611,22,1,"","Amravati"],["Kanak Godhankar",1,0,1,0,5,19,16552,375,0,"","Amravati"],["Krushnali Gedam",1,0,1,0,5,27,14952,313,0,"","Amravati"],["Mahak Sharma",1,0,1,0,5,82,1918,12,1,"","Amravati"],["Saee Pawar",1,0,1,0,5,56,5819,82,1,"","Amravati"],["Sharanya Wankhade",1,0,1,0,5,12,17421,403,0,"","Amravati"],["Aaradhya Kavimandan",1,0,0,0,5,28,14253,294,0,"","Amravati"],["Aaradhya Sawade",1,0,0,0,5,16,17123,394,0,"","Amravati"],["Aarav Wankhade",1,0,0,0,5,66,3895,38,1,"","Amravati"],["Aditya Ubale",1,0,0,0,5,55,6224,89,1,"","Amravati"],["Ansh Bhande",1,0,0,0,5,59,5654,78,1,"","Amravati"],["Arnav Hantodkar",1,0,0,0,5,55,6224,89,1,"","Amravati"],["Daksh Khursade",1,0,0,0,5,55,6224,89,1,"","Amravati"],["Darshan Bhagat",1,0,0,0,5,36,11771,220,0,"","Amravati"],["Pradhnyesh Pasarkar",1,0,0,0,5,59,5654,78,1,"","Amravati"],["Prathemesh Sharma",1,0,0,0,5,71,3181,29,1,"","Amravati"],["Rudra Pawar",1,0,0,0,5,22,15949,358,0,"","Amravati"],["Sarthak Meshram",1,0,0,0,5,27,14952,313,0,"","Amravati"],["Sarvambh Sawarkar",1,0,0,0,5,28,14253,294,0,"","Amravati"],["Shambhu Shinganjude",1,0,0,0,5,56,5819,82,1,"","Amravati"],["Shlesh Nanir",1,0,0,0,5,28,14253,294,0,"","Amravati"],["Spandan Shirbhate",1,0,0,0,5,28,14253,294,0,"","Amravati"],["Sunny Tekam",1,0,0,0,5,33,12480,244,0,"","Amravati"],["Swaraj Gaigole",1,0,0,0,5,76,2611,22,1,"","Amravati"],["Swarid Pandya",1,0,0,0,5,23,15567,339,0,"","Amravati"],["Swarup Bhende",1,0,0,0,5,61,4704,60,1,"","Amravati"],["Vihan Takpire",1,0,0,0,5,22,15949,358,0,"","Amravati"],["Vishrut Akarte",1,0,0,0,5,39,10510,186,0,"","Amravati"],["Yatharth Bijawe",1,0,0,0,5,23,15567,339,0,"","Amravati"],["Anaya Dagwale",1,0,1,0,5,22,15949,358,0,"","Amravati"],["Gargi Patil",1,0,1,0,5,28,14253,294,0,"","Amravati"],["Gargi Fuladi",1,0,1,0,5,28,14253,294,0,"","Amravati"],["Nandini Meshram",1,0,1,0,5,16,17123,394,0,"","Amravati"],["Nidhi Dhere",1,0,1,0,5,33,12480,244,0,"","Amravati"],["Ojaswi Sawake",1,0,1,0,5,44,9154,155,1,"","Amravati"],["Sharvari Swargiya",1,0,1,0,5,33,12480,244,0,"","Amravati"],["Shree Kale",1,0,1,0,5,33,12480,244,0,"","Amravati"],["Shreya Chauhan",1,0,1,0,5,22,15949,358,0,"","Amravati"],["Swara Adsod",1,0,1,0,5,28,14253,294,0,"","Amravati"],["Tanya Raibole",1,0,1,0,5,49,8001,130,1,"","Amravati"],["Aaradhya Shingrup",1,0,0,0,5,17,16655,377,0,"","Amravati"],["Aarav Bhende",1,0,0,0,5,34,12026,231,0,"","Amravati"],["Aarov Sawant",1,0,0,0,5,44,9154,155,1,"","Amravati"],["Aayush Swargiya",1,0,0,0,5,49,8001,130,1,"","Amravati"],["Aaryesh Munde",1,0,0,0,5,55,6224,89,1,"","Amravati"],["Abhyudya Tare",1,0,0,0,5,34,12026,231,0,"","Amravati"],["Atharv Gawande",1,0,0,0,5,66,3895,38,1,"","Amravati"],["Bhavik Kohale",1,0,0,0,5,30,13419,273,0,"","Amravati"],["Chaitanya Dighade",1,0,0,0,5,23,15567,339,0,"","Amravati"],["Chinmay Thakare",1,0,0,0,5,39,10510,186,0,"","Amravati"],["Daksh Panchal",1,0,0,0,5,16,17123,394,0,"","Amravati"],["Krishan Chaware",1,0,0,0,5,17,16655,377,0,"","Amravati"],["Mandar Patil",1,0,0,0,5,44,9154,155,1,"","Amravati"],["Nimish Kulkarni",1,0,0,0,5,6,17886,419,0,"","Amravati"],["Pratik Kove",1,0,0,0,5,44,9154,155,1,"","Amravati"],["Ram Kalhane",1,0,0,0,5,16,17123,394,0,"","Amravati"],["Samarth Shriwas",1,0,0,0,5,6,17886,419,0,"","Amravati"],["Shaurya Bhakare",1,0,0,0,5,30,13419,273,0,"","Amravati"],["Shree Kanse",1,0,0,0,5,50,7332,119,1,"","Amravati"],["Swaraj Mehere",1,0,0,0,5,44,9154,155,1,"","Amravati"],["Tanmay Thakare",1,0,0,0,5,50,7332,119,1,"","Amravati"],["Yatharth Khot",1,0,0,0,5,32,13232,266,0,"","Amravati"],["Yug Khadse",1,0,0,0,5,65,4333,48,1,"","Amravati"],["Aradhya Bhagat",1,0,1,0,5,55,6224,89,1,"","Amravati"],["Charu Tardeja",1,0,1,0,5,33,12480,244,0,"","Amravati"],["Gauri Bhopale",1,0,1,0,5,44,9154,155,1,"","Amravati"],["Inaya Jaypurwala",1,0,1,0,5,39,10510,186,0,"","Amravati"],["Kavya Rohankar",1,0,1,0,5,25,15495,333,0,"","Amravati"],["Khushi Kunjam",1,0,1,0,5,76,2611,22,1,"","Amravati"],["Lekhika Chopde",1,0,1,0,5,27,14952,313,0,"","Amravati"],["Mokshada Pinge",1,0,1,0,5,11,17587,411,0,"","Amravati"],["Nirali Ghanmode",1,0,1,0,5,24,15509,335,0,"","Amravati"],["Ojasvi Sonwal",1,0,1,0,5,82,1918,12,1,"","Amravati"],["Pakhi Karwa",1,0,1,0,5,55,6224,89,1,"","Amravati"],["Pari Sawant",1,0,1,0,5,39,10510,186,0,"","Amravati"],["Radha Somalwar",1,0,1,0,5,43,9874,172,1,"","Amravati"],["Shreya Sawai",1,0,1,0,5,24,15509,335,0,"","Amravati"],["Shruti Joshi",1,0,1,0,5,28,14253,294,0,"","Amravati"],["Aaradhy Pinjarkar",1,0,0,0,5,22,15949,358,0,"","Amravati"],["Abhinav Khandare",1,0,1,0,5,26,15420,329,0,"","Amravati"],["Advait Sable",1,0,1,0,5,28,14253,294,0,"","Amravati"],["Agastya Jawanjal",1,0,1,0,5,33,12480,244,0,"","Amravati"],["Arihant Sable",1,0,1,0,5,55,6224,89,1,"","Amravati"],["Devanshu Belsare",1,0,1,0,5,37,11712,217,0,"","Amravati"],["Divyanshu Pokale",1,0,1,0,5,65,4333,48,1,"","Amravati"],["Harsh Nichat",1,0,1,0,5,54,6839,105,1,"","Amravati"],["Krushna Tikande",1,0,1,0,5,17,16655,377,0,"","Amravati"],["Raj Mahulkar",1,0,1,0,5,22,15949,358,0,"","Amravati"],["Rajveer Gudadhe",1,0,1,0,5,30,13419,273,0,"","Amravati"],["Samar Walsinge",1,0,1,0,5,25,15495,333,0,"","Amravati"],["Samay Chaudhary",1,0,1,0,5,23,15567,339,0,"","Amravati"],["Sarvesh Gulhane",1,0,1,0,5,16,17123,394,0,"","Amravati"],["Soham Akhare",1,0,1,0,5,71,3181,29,1,"","Amravati"],["Vihan Khadse",1,0,1,0,5,48,8521,141,1,"","Amravati"],["Vishwajeet Deshmukh",1,0,1,0,5,66,3895,38,1,"","Amravati"],["Vedant Nawalkar",1,0,1,0,5,30,2928,3,0,"Second Runner-Up in School","Amravati"],["Aaradhya Ingole",1,0,1,0,5,49,8001,130,1,"","Amravati"],["Aarohi Nannaware",1,0,1,0,5,17,16655,377,0,"","Amravati"],["Aditi Tiwari",1,0,1,0,5,39,10510,186,0,"","Amravati"],["Aarya Sharma",1,0,1,0,5,17,16655,377,0,"","Amravati"],["Aanandi Watane",1,0,1,0,5,16,17123,394,0,"","Amravati"],["Ishita Tiwari",1,0,1,0,5,62,4574,57,1,"","Amravati"],["Janhavi Bonde",1,0,1,0,5,38,11238,205,0,"","Amravati"],["Lavanya Ambildhuke",1,0,1,0,5,6,17886,419,0,"","Amravati"],["Liba Khan",1,0,1,0,5,17,16655,377,0,"","Amravati"],["Sampada Khokale",1,0,1,0,5,26,15420,329,0,"","Amravati"],["Shankavi Shriwas",1,0,1,0,5,29,14105,292,0,"","Amravati"],["Shrawani Ambadkar",1,0,1,0,5,43,9874,172,1,"","Amravati"],["Shrishti Rathod",1,0,1,0,5,54,6839,105,1,"","Amravati"],["Umang Solanke",1,0,1,0,5,12,17421,403,0,"","Amravati"],["Vanshika Singh",1,0,1,0,5,60,5232,71,1,"","Amravati"],["Vibhawari Khanande",1,0,1,0,5,17,16655,377,0,"","Amravati"],["Aaradhy Pande",1,0,0,0,5,27,14952,313,0,"","Amravati"],["Advait Bijwal",1,0,0,0,5,34,12026,231,0,"","Amravati"],["Arnav Akhare",1,0,0,0,5,61,4704,60,1,"","Amravati"],["Amrish Patil",1,0,0,0,5,6,17886,419,0,"","Amravati"],["Ayush Korat",1,0,0,0,5,93,1095,4,1,"","Amravati"],["Chaitanya Dhoke",1,0,0,0,5,40,10286,181,1,"","Amravati"],["Devansh Patil",1,0,0,0,5,23,15567,339,0,"","Amravati"],["Manas Pawar",1,0,0,0,5,22,15949,358,0,"","Amravati"],["Manas Ghuse",1,0,0,0,5,28,14253,294,0,"","Amravati"],["Nirav Shendre",1,0,0,0,5,22,15949,358,0,"","Amravati"],["Praharsh Nandeshwar",1,0,0,0,5,38,11238,205,0,"","Amravati"],["Rudresh Ghoderao",1,0,0,0,5,39,10510,186,0,"","Amravati"],["Sasmit Batho",1,0,0,0,5,33,12480,244,0,"","Amravati"],["Sayyad Asifali",1,0,0,0,5,50,7332,119,1,"","Amravati"],["Shiv Chaudhari",1,0,0,0,5,111,386,1,1,"First in School","Amravati"],["Smit Khodke",1,0,0,0,5,51,7117,114,1,"","Amravati"],["Sonish Israni",1,0,0,0,5,30,13419,273,0,"","Amravati"],["Vallabh Thakare",1,0,0,0,5,54,6839,105,1,"","Amravati"],["Veer Kotecha",1,0,0,0,5,28,14253,294,0,"","Amravati"],["Viraaj Deshmukh",1,0,0,0,5,39,10510,186,0,"","Amravati"],["Aaradhya Navghare",1,0,1,0,5,30,13419,273,0,"","Amravati"],["Asmita Khobragade",1,0,1,0,5,30,13419,273,0,"","Amravati"],["Avni Bankar",1,0,1,0,5,26,15420,329,0,"","Amravati"],["Kattyayani Mohod",1,0,1,0,5,55,6224,89,1,"","Amravati"],["Madhavi Gujalmane",1,0,1,0,5,17,16655,377,0,"","Amravati"],["Manushee Wathodkar",1,0,1,0,5,44,9154,155,1,"","Amravati"],["Niyati Tantarpale",1,0,1,0,5,60,5232,71,1,"","Amravati"],["Parushni Rane",1,0,1,0,5,36,11771,220,0,"","Amravati"],["Pranjal",1,0,1,0,5,49,8001,130,1,"","Amravati"],["Riya Lokhande",1,0,1,0,5,24,15509,335,0,"","Amravati"],["Sahitic",1,0,1,0,5,30,13419,273,0,"","Amravati"],["Shatayushi Shinde",1,0,1,0,5,61,4704,60,1,"","Amravati"],["Shravani Chaudhari",1,0,1,0,5,6,17886,419,0,"","Amravati"],["Shruti Yadav",1,0,1,0,5,71,3181,29,1,"","Amravati"],["Swara Banarse",1,0,1,0,5,34,12026,231,0,"","Amravati"],["Vaidehi Darvekhar",1,0,1,0,5,17,16655,377,0,"","Amravati"],["Veera Kalyamwar",1,0,1,0,5,61,4704,60,1,"","Amravati"],["Vishuddhi Dongare",1,0,1,0,5,17,16655,377,0,"","Amravati"],["Aarush Jawarkar",1,0,0,0,5,31,13379,270,0,"","Amravati"],["Adnyesh Dharme",1,0,0,0,5,34,12026,231,0,"","Amravati"],["Advait Shrikhande",1,0,0,0,5,30,13419,273,0,"","Amravati"],["Arjun Nahale",1,0,0,0,5,0,18159,433,0,"","Amravati"],["Bhargav Kalapad",1,0,0,0,5,39,10510,186,0,"","Amravati"],["Dhruve Kukreja",1,0,0,0,5,26,15420,329,0,"","Amravati"],["Himanshu Pingale",1,0,0,0,5,16,17123,394,0,"","Amravati"],["Ishwar Gunjate",1,0,0,0,5,0,18159,433,0,"","Amravati"],["Kanishk Kinger",1,0,0,0,5,30,13419,273,0,"","Amravati"],["Malhar Patil",1,0,0,0,5,28,14253,294,0,"","Amravati"],["Naitik Adwani",1,0,0,0,5,33,12480,244,0,"","Amravati"],["Rajveer Jalit",1,0,0,0,5,44,9154,155,1,"","Amravati"],["Reehansh Nikose",1,0,0,0,5,56,5819,82,1,"","Amravati"],["Shreeraj Koturwar",1,0,0,0,5,30,13419,273,0,"","Amravati"],["Shriansh Sahu",1,0,0,0,5,44,9154,155,1,"","Amravati"],["Siddhant Deshmukh",1,0,0,0,5,45,8719,146,1,"","Amravati"],["Tanmay Inwate",1,0,0,0,5,39,10510,186,0,"","Amravati"],["Umang Shahare",1,0,0,0,5,27,14952,313,0,"","Amravati"],["Aarohi Bihar",1,0,1,0,5,37,11712,217,0,"","Amravati"],["Anvi Deshmukh",1,0,1,0,5,65,4333,48,1,"","Amravati"],["Anvi Borekar",1,0,1,0,5,33,12480,244,0,"","Amravati"],["Devanshi Jagtap",1,0,1,0,5,35,11959,228,0,"","Amravati"],["Lavishka Mattani",1,0,1,0,5,28,14253,294,0,"","Amravati"],["Madhura Atkari",1,0,1,0,5,12,17421,403,0,"","Amravati"],["Maithili Ugale",1,0,1,0,5,33,12480,244,0,"","Amravati"],["Mehera Puri",1,0,1,0,5,27,14952,313,0,"","Amravati"],["Poorvi Kulkarni",1,0,1,0,5,50,7332,119,1,"","Amravati"],["Suhani Bangde",1,0,1,0,5,22,15949,358,0,"","Amravati"],["Survi Kale",1,0,1,0,5,27,14952,313,0,"","Amravati"],["Swara Vivek",1,0,1,0,5,66,3895,38,1,"","Amravati"],["Swara Kawade",1,0,1,0,5,56,5819,82,1,"","Amravati"],["Vedashree Deshmukh",1,0,1,0,5,50,7332,119,1,"","Amravati"],["Arnav Pokale",1,0,0,0,5,33,12480,244,0,"","Amravati"],["Anmol Gupta",1,0,0,0,5,22,15949,358,0,"","Amravati"],["Divayanshu Bundele",1,0,0,0,5,0,18159,433,0,"","Amravati"],["Gopal Kolhe",1,0,0,0,5,55,6224,89,1,"","Amravati"],["Hardik Raut",1,0,0,0,5,22,15949,358,0,"","Amravati"],["Krushna Mote",1,0,0,0,5,56,5819,82,1,"","Amravati"],["Lakshya Rahangdale",1,0,0,0,5,67,3585,36,1,"","Amravati"],["Parth Zarkar",1,0,0,0,5,11,17587,411,0,"","Amravati"],["Rajveer Chavan",1,0,0,0,5,50,7332,119,1,"","Amravati"],["Saksham Tayade",1,0,0,0,5,30,13419,273,0,"","Amravati"],["Samarth Dahake",1,0,0,0,5,33,12480,244,0,"","Amravati"],["Siddesh Kawathkar",1,0,0,0,5,38,11238,205,0,"","Amravati"],["Siddhant Verma",1,0,0,0,5,49,8001,130,1,"","Amravati"],["Shrikant Atkare",1,0,0,0,5,27,14952,313,0,"","Amravati"],["Suyog Deshmukh",1,0,0,0,5,71,3181,29,1,"","Amravati"],["Swaraj Deshmukh",1,0,0,0,5,33,12480,244,0,"","Amravati"],["Tejas Deshmukh",1,0,0,0,5,6,17886,419,0,"","Amravati"],["Vansh Daga",1,0,0,0,5,58,5729,80,1,"","Amravati"],["Vedant Thakre",1,0,0,0,5,30,13419,273,0,"","Amravati"],["Yashvadhan Shirbhate",1,0,0,0,5,40,10286,181,1,"","Amravati"],["Ram Bhateja",1,0,0,0,5,44,9154,155,1,"","Amravati"],["Aradhya Mhaske",1,0,1,1,6,81,2082,14,1,"","Amravati"],["Aaradhya Jagtap",1,0,1,1,6,27,14952,313,0,"","Amravati"],["Ankita Bharti",1,0,1,1,6,81,2082,14,1,"","Amravati"],["Darshika Tiwari",1,0,1,1,6,36,11771,220,0,"","Amravati"],["Janvi Agarwal",1,0,1,1,6,38,11238,205,0,"","Amravati"],["Maitri Gawai",1,0,1,1,6,12,17421,403,0,"","Amravati"],["Nidhi Ganjare",1,0,1,1,6,34,12026,231,0,"","Amravati"],["Nidhi Rajani",1,0,1,1,6,23,15567,339,0,"","Amravati"],["Prathana Dhikyav",1,0,1,1,6,6,17886,419,0,"","Amravati"],["Saanvi Gakhare",1,0,1,1,6,34,12026,231,0,"","Amravati"],["Swara Ghate",1,0,1,1,6,28,14253,294,0,"","Amravati"],["Aadesh Parekar",1,0,0,1,6,42,10145,175,1,"","Amravati"],["Aaradhy Ambulkar",1,0,0,1,6,55,6224,89,1,"","Amravati"],["Adhiraj Jayale",1,0,0,1,6,64,4522,53,1,"","Amravati"],["Aniket Kadu",1,0,0,1,6,34,12026,231,0,"","Amravati"],["Arnav Raut",1,0,0,1,6,17,16655,377,0,"","Amravati"],["Bhavnesh Jhamani",1,0,0,1,6,23,15567,339,0,"","Amravati"],["Harshit Chauhan",1,0,0,1,6,16,17123,394,0,"","Amravati"],["M.Affan Khan",1,0,0,1,6,61,4704,60,1,"","Amravati"],["Nikhil Chavhan",1,0,0,1,6,44,9154,155,1,"","Amravati"],["Ojas Warhade",1,0,0,1,6,61,4704,60,1,"","Amravati"],["Parth Bondre",1,0,0,1,6,6,17886,419,0,"","Amravati"],["Rudra Chauhan",1,0,0,1,6,0,18159,433,0,"","Amravati"],["Sahil Gharde",1,0,0,1,6,28,3188,5,0,"","Amravati"],["Samarth Thawkar",1,0,0,1,6,56,827,1,1,"First in School","Amravati"],["Shlok Khambayatkar",1,0,0,1,6,23,15567,339,0,"","Amravati"],["Swarajsingh Thakur",1,0,0,1,6,30,2928,3,0,"Second Runner-Up in School","Amravati"],["Annie Gangwani",1,0,1,1,6,35,11959,228,0,"","Amravati"],["Baneet kaur Nanda",1,0,1,1,6,44,9154,155,1,"","Amravati"],["Dhanvi Doifode",1,0,1,1,6,55,6224,89,1,"","Amravati"],["Drushti Kewalramani",1,0,1,1,6,17,16655,377,0,"","Amravati"],["Gayatri Pachkawade",1,0,1,1,6,54,6839,105,1,"","Amravati"],["Ishita Prasad",1,0,1,1,6,6,17886,419,0,"","Amravati"],["Janvi Titarmare",1,0,1,1,6,83,1721,7,1,"","Amravati"],["Siddhi Athate",1,0,1,1,6,83,1721,7,1,"","Amravati"],["Stuti Pandey",1,0,1,1,6,38,11238,205,0,"","Amravati"],["Swarashri Lanjewar",1,0,1,1,6,67,3585,36,1,"","Amravati"],["Vinti Asudani",1,0,1,1,6,83,1721,7,1,"","Amravati"],["Arsh Harde",1,0,0,1,6,6,17886,419,0,"","Amravati"],["Chaitanya Thakare",1,0,0,1,6,33,12480,244,0,"","Amravati"],["Charvik Gawande",1,0,0,1,6,22,15949,358,0,"","Amravati"],["Daivik Jadhav",1,0,0,1,6,83,1721,7,1,"","Amravati"],["Devansh Dhawale",1,0,0,1,6,33,12480,244,0,"","Amravati"],["Gyaanav Jiwane",1,0,0,1,6,37,11712,217,0,"","Amravati"],["Kanishk Shakya",1,0,0,1,6,31,13379,270,0,"","Amravati"],["Revansh Balkhande",1,0,0,1,6,55,6224,89,1,"","Amravati"],["Shashwat Shendge",1,0,0,1,6,39,10510,186,0,"","Amravati"],["Swaraj Kathe",1,0,0,1,6,54,6839,105,1,"","Amravati"],["Vaibhav Patel",1,0,0,1,6,71,3181,29,1,"","Amravati"],["Vihaan Patil",1,0,0,1,6,71,3181,29,1,"","Amravati"],["Yugant Raut",1,0,0,1,6,6,17886,419,0,"","Amravati"],["Aanandi Bhatkar",1,0,1,1,6,41,10246,180,1,"","Amravati"],["Aastha Gawande",1,0,1,1,6,46,8630,143,1,"","Amravati"],["Bhakti Jadhav",1,0,1,1,6,27,14952,313,0,"","Amravati"],["Dipal Kandalkar",1,0,1,1,6,56,5819,82,1,"","Amravati"],["Gracy Dhakade",1,0,1,1,6,22,15949,358,0,"","Amravati"],["Ishika Gupta",1,0,1,1,6,27,14952,313,0,"","Amravati"],["Kartiki Borkhade",1,0,1,1,6,50,7332,119,1,"","Amravati"],["Nidhi Dhankari",1,0,1,1,6,22,15949,358,0,"","Amravati"],["Niyati Dhoke",1,0,1,1,6,32,13232,266,0,"","Amravati"],["Ravee Kadu",1,0,1,1,6,23,15567,339,0,"","Amravati"],["Sara Jadhao",1,0,1,1,6,55,6224,89,1,"","Amravati"],["Vidhisha Zambani",1,0,1,1,6,22,15949,358,0,"","Amravati"],["Yashada Deshmukh",1,0,1,1,6,51,7117,114,1,"","Amravati"],["Aaradhya Bhute",1,0,0,1,6,55,6224,89,1,"","Amravati"],["Amar Metkar",1,0,0,1,6,38,11238,205,0,"","Amravati"],["Anant Metkar",1,0,0,1,6,60,5232,71,1,"","Amravati"],["Ansh Dhalwani",1,0,0,1,6,61,4704,60,1,"","Amravati"],["Bhavesh Chikhalkar",1,0,0,1,6,49,8001,130,1,"","Amravati"],["Chinmay Gulhane",1,0,0,1,6,50,7332,119,1,"","Amravati"],["Devansh Mahure",1,0,0,1,6,54,6839,105,1,"","Amravati"],["Jatin Motvani",1,0,0,1,6,28,14253,294,0,"","Amravati"],["Naksh Shrimali",1,0,0,1,6,49,8001,130,1,"","Amravati"],["Prasad Mankar",1,0,0,1,6,34,12026,231,0,"","Amravati"],["Pratyush Chawhani",1,0,0,1,6,6,17886,419,0,"","Amravati"],["Rajveer Aware",1,0,0,1,6,77,2285,18,1,"","Amravati"],["Roman Khan",1,0,0,1,6,45,8719,146,1,"","Amravati"],["Sarthak Andhale",1,0,0,1,6,49,8001,130,1,"","Amravati"],["Sarthak Fate",1,0,0,1,6,23,15567,339,0,"","Amravati"],["Sharavn Patil",1,0,0,1,6,60,5232,71,1,"","Amravati"],["Shourya Gawande",1,0,0,1,6,35,11959,228,0,"","Amravati"],["Subodh Nakhale",1,0,0,1,6,55,6224,89,1,"","Amravati"],["Vedant Patil",1,0,0,1,6,72,2886,28,1,"","Amravati"],["Vihan Kalmegh",1,0,0,1,6,66,3895,38,1,"","Amravati"],["Yuvraj Nagargoje",1,0,0,1,6,50,7332,119,1,"","Amravati"],["Aaradhya Bawaskar",1,0,1,1,6,66,3895,38,1,"","Amravati"],["Aaradhya Ade",1,0,1,1,6,33,12480,244,0,"","Amravati"],["Aaradhya Jaiswal",1,0,1,1,6,43,9874,172,1,"","Amravati"],["Aditi Aherwar",1,0,1,1,6,40,10286,181,1,"","Amravati"],["Anandi Dawake",1,0,1,1,6,81,2082,14,1,"","Amravati"],["Haniya Khan",1,0,1,1,6,45,8719,146,1,"","Amravati"],["Hemashri Vighe",1,0,1,1,6,23,15567,339,0,"","Amravati"],["Jivika Rawlani",1,0,1,1,6,27,14952,313,0,"","Amravati"],["Sayali Dhaye",1,0,1,1,6,66,3895,38,1,"","Amravati"],["Shriya Jaswante",1,0,1,1,6,56,5819,82,1,"","Amravati"],["Trushna Nistane",1,0,1,1,6,39,10510,186,0,"","Amravati"],["Aaradhya Mahalle",1,0,0,1,6,50,7332,119,1,"","Amravati"],["Aaradhya Tayde",1,0,0,1,6,39,10510,186,0,"","Amravati"],["Advay Chaudhari",1,0,0,1,6,23,15567,339,0,"",
+...
